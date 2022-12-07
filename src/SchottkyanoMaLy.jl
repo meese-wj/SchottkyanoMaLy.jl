@@ -1,5 +1,8 @@
 module SchottkyanoMaLy
 
-# Write your package code here.
+using Random
+using Distributions
+using FastChebInterp
+using LinearAlgebra
 
 end
