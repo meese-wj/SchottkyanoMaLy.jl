@@ -2,20 +2,37 @@
 using SpecialFunctions
 
 @doc raw"""
+    Theta(x)
+
+Package-specific implementation of the Heaviside Theta function. Our definition is
+
+```math
+\Theta(x) = \begin{cases}
+1, & x \geq 0
+\\
+0, & \mathrm{otherwise}
+\end{cases}.
+```
+"""
+Theta(x) = map( val -> convert(eltype(val), val ≥ zero(val)), x )
+
+@doc raw"""
     donutvolcano(x, μ, σ)
 
 The `donutvolcano` distribution calculated for an input `x` with center `μ` and width `σ`.
 The argument `x` can be a scalar or broadcastable.
 
+The distribution itself is given by 
+
 ```math
-{\rm donutvolcano}(x; μ, σ) = \frac{x}{\mathcal{N}(\mu,\sigma)} \exp\left[ -\frac{\left(x - \mu\right)^2}{2\sigma^2} \right],
+{\rm donutvolcano}(x; μ, σ) = \frac{x \Theta(x)}{\mathcal{N}(\mu,\sigma)} \exp\left[ -\frac{\left(x - \mu\right)^2}{2\sigma^2} \right],
 ```
 
-with the normalization constant ``\mathcal{N}(\mu,\sigma)`` given by [`norm_donutvolcano`](@ref).
+where we use our own Heaviside [`Theta`](@ref) function above. The normalization constant ``\mathcal{N}(\mu,\sigma)`` given by [`norm_donutvolcano`](@ref).
 """
 function donutvolcano(x, μ, σ)
 	normalizer = norm_donutvolcano(μ, σ)
-	return @. x * exp( -0.5 * ( (x - μ) / σ )^2 ) / normalizer
+	return @. x * Theta(x) * exp( -0.5 * ( (x - μ) / σ )^2 ) / normalizer
 end
 
 @doc raw"""
