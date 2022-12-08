@@ -144,10 +144,21 @@ get_pair(dve::DonutVolcanoEnsemble, pair_idx) = Tuple( ensemble(dve)[pair_idx] )
 Return the number of [`donutvolcano`](@ref) in the [`DonutVolcanoEnsemble`](@ref).
 """
 npairs(dve::DonutVolcanoEnsemble) = length(ensemble(dve))
+"""
+    μvalue(::Tuple{T, T})
+    μvalue(::DonutVolcanoEnsemble, idx)
 
-μvalue(tup::Tuple{T, T}) = tup[1]
+Return the value of μ from a given `(μ, σ)` `Tuple`.
+"""
+μvalue(tup::Tuple{T, T}) where T = tup[1]
 μvalue(dve::DonutVolcanoEnsemble, idx) = μvalue(get_pair(dve, idx))
-σvalue(tup::Tuple{T, T}) = tup[2]
+"""
+    σvalue(::Tuple{T, T})
+    σvalue(::DonutVolcanoEnsemble, idx)
+
+Return the value of σ from a given `(μ, σ)` `Tuple`.
+"""
+σvalue(tup::Tuple{T, T}) where T = tup[2]
 σvalue(dve::DonutVolcanoEnsemble, idx) = σvalue(get_pair(dve, idx))
 
 # Convenient Base overloads
