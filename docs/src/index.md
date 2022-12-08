@@ -1,14 +1,14 @@
 ```@meta
-CurrentModule = SchottkyanoMaLy
+CurrentModule = SchottkyAnoMaLy
 ```
 
-# SchottkyanoMaLy
+# SchottkyAnoMaLy
 
-Documentation for [SchottkyanoMaLy](https://github.com/meese-wj/SchottkyanoMaLy.jl).
+Documentation for [SchottkyAnoMaLy](https://github.com/meese-wj/SchottkyAnoMaLy.jl).
 
 ```@index
 ```
 
 ```@autodocs
-Modules = [SchottkyanoMaLy]
+Modules = [SchottkyAnoMaLy]
 ```

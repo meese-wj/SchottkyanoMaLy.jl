@@ -1,4 +1,4 @@
-module SchottkyanoMaLy
+module SchottkyAnoMaLy
 
 using Random
 using Distributions

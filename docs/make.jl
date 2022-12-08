@@ -1,16 +1,16 @@
-using SchottkyanoMaLy
+using SchottkyAnoMaLy
 using Documenter
 
-DocMeta.setdocmeta!(SchottkyanoMaLy, :DocTestSetup, :(using SchottkyanoMaLy); recursive=true)
+DocMeta.setdocmeta!(SchottkyAnoMaLy, :DocTestSetup, :(using SchottkyAnoMaLy); recursive=true)
 
 makedocs(;
-    modules=[SchottkyanoMaLy],
+    modules=[SchottkyAnoMaLy],
     authors="W. Joe Meese <meese022@umn.edu> and contributors",
-    repo="https://github.com/meese-wj/SchottkyanoMaLy.jl/blob/{commit}{path}#{line}",
-    sitename="SchottkyanoMaLy.jl",
+    repo="https://github.com/meese-wj/SchottkyAnoMaLy.jl/blob/{commit}{path}#{line}",
+    sitename="SchottkyAnoMaLy.jl",
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",
-        canonical="https://meese-wj.github.io/SchottkyanoMaLy.jl",
+        canonical="https://meese-wj.github.io/SchottkyAnoMaLy.jl",
         edit_link="main",
         assets=String[],
     ),
@@ -20,6 +20,6 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/meese-wj/SchottkyanoMaLy.jl",
+    repo="github.com/meese-wj/SchottkyAnoMaLy.jl",
     devbranch="main",
 )

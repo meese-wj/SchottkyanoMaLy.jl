@@ -1,6 +1,6 @@
-using SchottkyanoMaLy
+using SchottkyAnoMaLy
 using Test
 
-@testset "SchottkyanoMaLy.jl" begin
+@testset "SchottkyAnoMaLy.jl" begin
     # Write your tests here.
 end
