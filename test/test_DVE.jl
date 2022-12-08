@@ -84,6 +84,13 @@ using Distributions
             @testset "Assertion errors" begin
                 @test_throws AssertionError DonutVolcanoEnsemble{Float64}([(-1.0, 1.0)])
                 @test_throws AssertionError DonutVolcanoEnsemble{Float64}([(1.0, -1.0)])
+                
+                @test_throws AssertionError DonutVolcanoEnsemble([(-1.0, 1.0)])
+                @test_throws AssertionError DonutVolcanoEnsemble([(1.0, -1.0)])
+            end
+
+            @testset "" begin
+                
             end
 
         end

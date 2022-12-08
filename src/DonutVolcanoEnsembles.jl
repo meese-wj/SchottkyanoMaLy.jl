@@ -74,13 +74,13 @@ and ``\sigma_k > 0``.
 struct DonutVolcanoEnsemble{T <: AbstractFloat}
 	ensemble::Vector{Tuple{T, T}}
 
-    function DonutVolcanoEnsemble{T}( tups::Vector{Tuple{T, T}} ) where T
-        for tup ∈ tups
-            @assert μvalue(tup) ≥ zero(μvalue(tup)) "All μ values must be strictly nonnegative."
-            @assert σvalue(tup) > zero(σvalue(tup)) "All σ values must be strictly positive."
-        end
-        return new{T}(tups)
-    end
+    DonutVolcanoEnsemble{T}( tups::Vector{Tuple{T, T}} ) where T = ( map(_check_pair, tups); new{T}(tups) )
+end
+
+function _check_pair(tup)
+    @assert μvalue(tup) ≥ zero(μvalue(tup)) "All μ values must be strictly nonnegative."
+    @assert σvalue(tup) > zero(σvalue(tup)) "All σ values must be strictly positive."
+    return tup
 end
 
 # Constructors
@@ -163,8 +163,8 @@ Return the value of σ from a given `(μ, σ)` `Tuple`.
 
 # Convenient Base overloads
 Base.eltype(::DonutVolcanoEnsemble{T}) where T = T
-Base.push!(dve::DonutVolcanoEnsemble{T}, pair) where T = push!(ensemble(dve), convert.(T, pair))
-Base.append!(dve::DonutVolcanoEnsemble{T}, vals) where T = append!(ensemble(dve), map(x -> convert.(T, x), vals))
+Base.push!(dve::DonutVolcanoEnsemble{T}, pair) where T = push!(ensemble(dve), convert.(T, pair) |> _check_pair )
+Base.append!(dve::DonutVolcanoEnsemble{T}, vals) where T = append!(ensemble(dve), map(x -> convert.(T, x) |> _check_pair, vals))
 
 # Make the DonutVolcanoEnsemble a callable function over a set of values x
 function (dve::DonutVolcanoEnsemble)(x)
