@@ -69,15 +69,21 @@ An ensemble of ``M`` [`donutvolcano`](@ref)s takes the form
 
 This object is a wrapper around an `ensemble::Vector{Tuple{T, T}}` for the individual
 [`donutvolcano`](@ref)s. The values of ``(μ_k, σ_k)`` are restricted such that ``\mu_k \geq 0``
-and ``\sigma_k > 0``.
+and ``\sigma_k > 0`` via the [`valid`](@ref) function.
 """
 struct DonutVolcanoEnsemble{T <: Real}
 	ensemble::Vector{Tuple{T, T}}
 
-    DonutVolcanoEnsemble{T}( tups::Vector{Tuple{T, T}} ) where T = ( map(_check_pair, tups); new{T}(tups) )
+    DonutVolcanoEnsemble{T}( tups::Vector{Tuple{T, T}} ) where T = ( map(valid, tups); new{T}(tups) )
 end
 
-function _check_pair(tup)
+"""
+    valid(::Tuple{T, T})
+
+Returns the given `Tuple` `(μ, σ)` if `μ ≥ 0` and `σ > 0`. Otherwise, an `AssertionError` 
+will be thrown.
+"""
+function valid(tup)
     @assert μvalue(tup) ≥ zero(μvalue(tup)) "All μ values must be strictly nonnegative."
     @assert σvalue(tup) > zero(σvalue(tup)) "All σ values must be strictly positive."
     return tup
@@ -101,6 +107,9 @@ Various interfaces to a [`DonutVolcanoEnsemble`](@ref)
 * `DonutVolcanoEnsemble(::Type{S}, ::Vector{Tuple{T, U}})`
     * Create an ensemble from a `Vector` of `(μ, σ)` `Tuple`s of the different `Type`s into an ensemble of with preferred type `S`.
     * The ultimate type of the ensemble is chosen by `Base.promote_type`.
+
+!!! note
+    The constructors above will check that any supplied `pair` is [`valid`](@ref).
     
 # Empty constructors
 
@@ -162,11 +171,48 @@ Return the value of σ from a given `(μ, σ)` `Tuple`.
 σvalue(dve::DonutVolcanoEnsemble, idx) = σvalue(get_pair(dve, idx))
 
 # Convenient Base overloads
-Base.eltype(::DonutVolcanoEnsemble{T}) where T = T
-Base.push!(dve::DonutVolcanoEnsemble{T}, pair) where T = push!(ensemble(dve), convert.(T, pair) |> _check_pair )
-Base.append!(dve::DonutVolcanoEnsemble{T}, vals) where T = append!(ensemble(dve), map(x -> convert.(T, x) |> _check_pair, vals))
+"""
+    Base.eltype(::DonutVolcanoEnsemble)
 
-# Make the DonutVolcanoEnsemble a callable function over a set of values x
+Return the type of the [`DonutVolcanoEnsemble`](@ref).
+"""
+Base.eltype(::DonutVolcanoEnsemble{T}) where T = T
+"""
+    Base.push!(::DonutVolcanoEnsemble, pair)
+
+Push a new `(μ, σ)` `Tuple` into a given [`DonutVolcanoEnsemble`](@ref).
+
+!!! note
+    This function will check that the `pair` is [`valid`](@ref).
+"""
+Base.push!(dve::DonutVolcanoEnsemble{T}, pair) where T = push!(ensemble(dve), convert.(T, pair) |> valid )
+"""
+    Base.append!(::DonutVolcanoEnsemble, vals)
+
+Append the `vals::Vector{Tuple{S, T}}` to the [`DonutVolcanoEnsemble`](@ref).
+
+!!! note
+    This function will check that the `pair` is [`valid`](@ref).
+"""
+Base.append!(dve::DonutVolcanoEnsemble{T}, vals) where T = append!(ensemble(dve), map(x -> convert.(T, x) |> valid, vals))
+
+"""
+    (::DonutVolcanoEnsemble)(x)
+    
+Evaluate the DonutVolcanoEnsemble as a function over a set of values `x`.
+
+```jldoctest
+julia> dve = DonutVolcanoEnsemble(Float64, [(0, 1)]);
+
+julia> dve(2)
+0.2706705664732254
+
+julia> dve([3, 4])
+2-element Vector{Float64}:
+ 0.033326989614726917
+ 0.0013418505116100474
+```
+"""
 function (dve::DonutVolcanoEnsemble)(x)
 	output = zero.(x)
 	@inbounds for pdx ∈ UnitRange(1, npairs(dve))

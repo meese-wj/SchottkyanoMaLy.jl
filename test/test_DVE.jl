@@ -64,8 +64,8 @@ using Distributions
         end
 
         @testset "Normalization" begin
-            μdist = Uniform(0, 100)
-            σdist = Uniform(0.001, 100)
+            μdist = Uniform(0, 50)
+            σdist = Uniform(0.001, 50)
             for idx ∈ UnitRange(1, 10)
                 μ, σ = rand(μdist), rand(σdist)
                 fullinteg = quadgk( x -> donutvolcano(x, μ, σ), -Inf, Inf )
