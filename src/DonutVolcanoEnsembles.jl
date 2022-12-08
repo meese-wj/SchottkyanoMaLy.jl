@@ -74,7 +74,7 @@ and ``\sigma_k > 0``.
 struct DonutVolcanoEnsemble{T <: AbstractFloat}
 	ensemble::Vector{Tuple{T, T}}
 
-    function DonutVolcanoEnsemble{T}( tups ) where T
+    function DonutVolcanoEnsemble{T}( tups::Vector{Tuple{T, T}} ) where T
         for tup ∈ tups
             @assert μvalue(tup) ≥ zero(μvalue(tup)) "All μ values must be strictly nonnegative."
             @assert σvalue(tup) > zero(σvalue(tup)) "All σ values must be strictly positive."
