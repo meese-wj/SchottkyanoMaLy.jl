@@ -5,7 +5,7 @@ import Base: eltype, push!, append!
 # Base overloads
 export eltype, push!, append!
 # DonutVolcanoEnsemble stuff
-export donutvolcano, DonutVolcanoEnsemble
+export donutvolcano, DonutVolcanoEnsemble, μvalue, σvalue
 
 @doc raw"""
     Theta(x)
@@ -68,10 +68,19 @@ An ensemble of ``M`` [`donutvolcano`](@ref)s takes the form
 ```
 
 This object is a wrapper around an `ensemble::Vector{Tuple{T, T}}` for the individual
-[`donutvolcano`](@ref)s.
+[`donutvolcano`](@ref)s. The values of ``(μ_k, σ_k)`` are restricted such that ``\mu_k \geq 0``
+and ``\sigma_k > 0``.
 """
 struct DonutVolcanoEnsemble{T <: AbstractFloat}
 	ensemble::Vector{Tuple{T, T}}
+
+    function DonutVolcanoEnsemble{T}( tups ) where T
+        for tup ∈ tups
+            @assert μvalue(tup) ≥ zero(μvalue(tup)) "All μ values must be strictly nonnegative."
+            @assert σvalue(tup) > zero(σvalue(tup)) "All σ values must be strictly positive."
+        end
+        return new{T}(tups)
+    end
 end
 
 # Constructors
@@ -135,6 +144,11 @@ get_pair(dve::DonutVolcanoEnsemble, pair_idx) = Tuple( ensemble(dve)[pair_idx] )
 Return the number of [`donutvolcano`](@ref) in the [`DonutVolcanoEnsemble`](@ref).
 """
 npairs(dve::DonutVolcanoEnsemble) = length(ensemble(dve))
+
+μvalue(tup::Tuple{T, T}) = tup[1]
+μvalue(dve::DonutVolcanoEnsemble, idx) = μvalue(get_pair(dve, idx))
+σvalue(tup::Tuple{T, T}) = tup[2]
+σvalue(dve::DonutVolcanoEnsemble, idx) = σvalue(get_pair(dve, idx))
 
 # Convenient Base overloads
 Base.eltype(::DonutVolcanoEnsemble{T}) where T = T
