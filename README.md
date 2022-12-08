@@ -1,4 +1,4 @@
-# SchottkyanoMaLy.jl
+# SchottkyAnoMaLy.jl
 
 [![status: experimental](https://github.com/GIScience/badges/raw/master/status/experimental.svg)](https://github.com/GIScience/badges#experimental)
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://meese-wj.github.io/SchottkyanoMaLy.jl/stable/)
