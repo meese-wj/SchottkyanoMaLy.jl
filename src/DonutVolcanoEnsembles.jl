@@ -5,7 +5,7 @@ import Base: eltype, push!, append!
 # Base overloads
 export eltype, push!, append!
 # DonutVolcanoEnsemble stuff
-export donutvolcano, DonutVolcanoEnsemble, μvalue, σvalue
+export donutvolcano, DonutVolcanoEnsemble, ensemble, μvalue, σvalue
 
 @doc raw"""
     Theta(x)
@@ -59,7 +59,7 @@ function norm_donutvolcano(μ, σ)
 end
 
 @doc raw"""
-    DonutVolcanoEnsemble{T <: AbstractFloat}
+    DonutVolcanoEnsemble{T <: Real}
 
 An ensemble of ``M`` [`donutvolcano`](@ref)s takes the form 
 
@@ -71,7 +71,7 @@ This object is a wrapper around an `ensemble::Vector{Tuple{T, T}}` for the indiv
 [`donutvolcano`](@ref)s. The values of ``(μ_k, σ_k)`` are restricted such that ``\mu_k \geq 0``
 and ``\sigma_k > 0``.
 """
-struct DonutVolcanoEnsemble{T <: AbstractFloat}
+struct DonutVolcanoEnsemble{T <: Real}
 	ensemble::Vector{Tuple{T, T}}
 
     DonutVolcanoEnsemble{T}( tups::Vector{Tuple{T, T}} ) where T = ( map(_check_pair, tups); new{T}(tups) )

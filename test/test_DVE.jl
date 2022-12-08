@@ -89,8 +89,30 @@ using Distributions
                 @test_throws AssertionError DonutVolcanoEnsemble([(1.0, -1.0)])
             end
 
-            @testset "" begin
+            @testset "Type conversions" begin
+                # Type 1 Constructor
+                dve = DonutVolcanoEnsemble( [(0., 1.)] )
+                @test eltype(dve) === Float64
+                # Type 2 Constructor
+                dve = DonutVolcanoEnsemble( [(0., 1)] )
+                @test eltype(dve) === Float64
+                # Type 3 Constructor
+                dve = DonutVolcanoEnsemble(Float32, [(0, 1)] )
+                @test eltype(dve) === Float32
+                # Type 4 Constructor
+                dve = DonutVolcanoEnsemble(Float16)
+                @test eltype(dve) === Float16
+                # Type 5 Constructor
+                dve = DonutVolcanoEnsemble()
+                @test eltype(dve) === Float64
+            end
+
+            @testset "Empty constructors" begin
+                dve = DonutVolcanoEnsemble()
+                @test SchottkyAnoMaLy.npairs(dve) == length(ensemble(dve)) == zero(Int)
                 
+                dve = DonutVolcanoEnsemble(Int32)
+                @test SchottkyAnoMaLy.npairs(dve) == length(ensemble(dve)) == zero(Int)
             end
 
         end
