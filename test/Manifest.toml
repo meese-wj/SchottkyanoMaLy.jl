@@ -338,7 +338,9 @@ version = "0.7.0"
 
 [[deps.SchottkyAnoMaLy]]
 deps = ["Distributions", "FastChebInterp", "LinearAlgebra", "QuadGK", "Random", "SpecialFunctions"]
-path = ".."
+git-tree-sha1 = "e55799d0d8cfcdeb1964ed88c4c8694dab0b97e9"
+repo-rev = "main"
+repo-url = ".."
 uuid = "3ed0496b-3ca4-435b-b445-f2c74f93172c"
 version = "0.1.0"
 
