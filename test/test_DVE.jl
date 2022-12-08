@@ -30,8 +30,8 @@ using Distributions
         let
             @testset "Array values" begin
                 # generate a random numbers on [0, 1]
-                Ndim = rand(2:10)   # probably overkill
-                Nsize = Int(2^5)
+                Ndim = rand(2:5)   # probably overkill
+                Nsize = Int(2^3)
                 dims = ntuple(x -> Nsize, Ndim)
                 temps = rand(Float64, dims)
                 @test all( SchottkyAnoMaLy.Theta( -1 .* temps ) .== zero.(temps) )         # -temp < 0
@@ -64,8 +64,8 @@ using Distributions
         end
 
         @testset "Normalization" begin
-            μdist = Uniform(0, 1000)
-            σdist = Uniform(0.001, 1000)
+            μdist = Uniform(0, 100)
+            σdist = Uniform(0.001, 100)
             for idx ∈ UnitRange(1, 10)
                 μ, σ = rand(μdist), rand(σdist)
                 fullinteg = quadgk( x -> donutvolcano(x, μ, σ), -Inf, Inf )
@@ -77,6 +77,18 @@ using Distributions
 
     end
 
+    @testset "Test DonutVolcanoEnsemble" begin
+        
+        @testset "Constructors" begin
+            
+            @testset "Assertion errors" begin
+                @test_throws AssertionError DonutVolcanoEnsemble{Float64}([(-1.0, 1.0)])
+                @test_throws AssertionError DonutVolcanoEnsemble{Float64}([(1.0, -1.0)])
+            end
+
+        end
+
+    end
 
 end
 println()
