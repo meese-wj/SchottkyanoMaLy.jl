@@ -30,11 +30,24 @@ and level-splitting `Δ` (measured in units of temperature). The formula is give
 ```math
 c_V(T;\, \Delta) = \left( \frac{\Delta}{T} \right)^2 \mathrm{sech}^2 \left( \frac{\Delta}{T} \right)^2.
 ```
+
+```jldoctest
+julia> specific_heat(TwoLevelSystem, 1, 1)
+0.41997434161402614
+```
 """
-specific_heat(::Type{TwoLevelSystem}, T::Real, Δ) = @. ( Δ / T * sech( Δ / T ) )^2
+specific_heat(::Type{TwoLevelSystem}, T, Δ) = @. ( Δ / T * sech( Δ / T ) )^2
 """
     specific_heat(T, Δ) = specific_heat(TwoLevelSystem, T, Δ)
 
-Default specific heat implementation.
+The default specific heat implementation chooses a [`TwoLevelSystem`](@ref).
+
+```jldoctest
+julia> specific_heat(1, 1)
+0.41997434161402614
+
+julia> specific_heat(TwoLevelSystem, 1, 1)
+0.41997434161402614
+```
 """
-specific_heat(T::Real, Δ) = specific_heat(TwoLevelSystem, T, Δ)
+specific_heat(T, Δ) = specific_heat(TwoLevelSystem, T, Δ)
