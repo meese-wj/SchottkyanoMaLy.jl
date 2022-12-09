@@ -175,12 +175,32 @@ Return the value of σ from a given `(μ, σ)` `Tuple`.
     Base.eltype(::DonutVolcanoEnsemble)
 
 Return the type of the [`DonutVolcanoEnsemble`](@ref).
+
+```jldoctest
+julia> dve = DonutVolcanoEnsemble()
+DonutVolcanoEnsemble{Float64}(Tuple{Float64, Float64}[])
+
+julia> eltype(dve)
+Float64
+```
 """
 Base.eltype(::DonutVolcanoEnsemble{T}) where T = T
 """
     Base.push!(::DonutVolcanoEnsemble, pair)
 
 Push a new `(μ, σ)` `Tuple` into a given [`DonutVolcanoEnsemble`](@ref).
+
+```jldoctest
+julia> dve = DonutVolcanoEnsemble()
+DonutVolcanoEnsemble{Float64}(Tuple{Float64, Float64}[])
+
+julia> append!(dve, [(0, 1)])
+1-element Vector{Tuple{Float64, Float64}}:
+ (0.0, 1.0)
+
+julia> dve
+DonutVolcanoEnsemble{Float64}([(0.0, 1.0)])
+```
 
 !!! note
     This function will check that the `pair` is [`valid`](@ref).
@@ -191,6 +211,19 @@ Base.push!(dve::DonutVolcanoEnsemble{T}, pair) where T = push!(ensemble(dve), co
 
 Append the `vals::Vector{Tuple{S, T}}` to the [`DonutVolcanoEnsemble`](@ref).
 
+```jldoctest
+julia> dve = DonutVolcanoEnsemble()
+DonutVolcanoEnsemble{Float64}(Tuple{Float64, Float64}[])
+
+julia> append!(dve, [(0, 1), (1, 3)])
+2-element Vector{Tuple{Float64, Float64}}:
+ (0.0, 1.0)
+ (1.0, 3.0)
+
+julia> dve
+DonutVolcanoEnsemble{Float64}([(0.0, 1.0), (1.0, 3.0)])
+```
+
 !!! note
     This function will check that the `pair` is [`valid`](@ref).
 """
@@ -198,7 +231,7 @@ Base.append!(dve::DonutVolcanoEnsemble{T}, vals) where T = append!(ensemble(dve)
 
 """
     (::DonutVolcanoEnsemble)(x)
-    
+
 Evaluate the DonutVolcanoEnsemble as a function over a set of values `x`.
 
 ```jldoctest
