@@ -8,7 +8,7 @@ using BenchmarkTools
     @testset "Specific Heat" begin
         @testset "Method Errors" begin
             struct doomed_to_fail <: SchottkyAnoMaLy.NLevelSystem end
-            @test_throws MethodError specific_heat(doomed_to_fail, 1, 1)
+            @test_throws MethodError specific_heat(doomed_to_fail, 1, 1) # No method implemented for the doomed_to_fail subtype
         end
 
         @testset "Benchmarking" begin
