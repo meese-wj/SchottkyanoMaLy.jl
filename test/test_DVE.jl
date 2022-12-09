@@ -70,6 +70,9 @@ using Distributions
                 μ, σ = rand(μdist), rand(σdist)
                 fullinteg = quadgk( x -> donutvolcano(x, μ, σ), -Inf, Inf )
                 integ = quadgk( x -> donutvolcano(x, μ, σ), 0., Inf )
+                if integ[1] ≈ 0. || fullinteg[1] ≈ 0.
+                    @show μ, σ
+                end
                 @test abs(integ[1] - oneunit(μ)) / oneunit(μ) ≤ integ[2]
                 @test abs(fullinteg[1] - oneunit(μ)) / oneunit(μ) ≤ fullinteg[2]
             end
@@ -113,6 +116,17 @@ using Distributions
                 
                 dve = DonutVolcanoEnsemble(Int32)
                 @test SchottkyAnoMaLy.npairs(dve) == length(ensemble(dve)) == zero(Int)
+            end
+
+            @testset "Push and Append protection" begin
+                dve = DonutVolcanoEnsemble()
+                @test_throws AssertionError push!(dve, (-1, 1))
+                @test_throws AssertionError push!(dve, (1, -1))
+                @test_throws AssertionError push!(dve, (1, 0))
+                
+                @test_throws AssertionError append!(dve, [(-1, 1)])
+                @test_throws AssertionError append!(dve, [(1, -1)])
+                @test_throws AssertionError append!(dve, [(1, 0)])
             end
 
         end
