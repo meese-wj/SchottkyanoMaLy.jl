@@ -194,7 +194,7 @@ Push a new `(μ, σ)` `Tuple` into a given [`DonutVolcanoEnsemble`](@ref).
 julia> dve = DonutVolcanoEnsemble()
 DonutVolcanoEnsemble{Float64}(Tuple{Float64, Float64}[])
 
-julia> append!(dve, [(0, 1)])
+julia> push!(dve, [(0, 1)])
 1-element Vector{Tuple{Float64, Float64}}:
  (0.0, 1.0)
 
