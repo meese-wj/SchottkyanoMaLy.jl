@@ -5,6 +5,7 @@ using Distributions
 using FastChebInterp
 using LinearAlgebra
 
+include("StatisticalMechanicsFormulas.jl")
 include("DonutVolcanoEnsembles.jl")
 
-end
+end # module SchottkyAnoMaLy
