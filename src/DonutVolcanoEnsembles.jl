@@ -84,6 +84,8 @@ Returns the given `Tuple` `(μ, σ)` if `μ ≥ 0` and `σ > 0`. Otherwise, an `
 will be thrown.
 """
 function valid(tup)
+    # TODO: Sweep μ/σ ratio for when quadgk fails. This will give bounds on σ in terms of μ. 
+    # (μ/σ ≈ 32/0.17 ≈ 188 is problematic from tests) 
     @assert μvalue(tup) ≥ zero(μvalue(tup)) "All μ values must be strictly nonnegative."
     @assert σvalue(tup) > zero(σvalue(tup)) "All σ values must be strictly positive."
     return tup
