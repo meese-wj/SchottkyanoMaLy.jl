@@ -20,6 +20,18 @@ The square-mass formula, given as a continuous integral, is
 ```math
 M^2[y(x)] = \int_a^b \mathrm{d}x\, \left[ y(x) \right]^2.
 ```
+
+```jldoctest
+julia> xvals = LinRange(1, 10, 10);
+
+julia> yvals = sqrt.(xvals);  # In this case the trapezoidal rule is exact
+
+julia> value = SchottkyAnoMaLy.mass2(xvals, yvals)
+49.5
+
+julia> value ≈ 1/2 * ( maximum(xvals)^2 - minimum(xvals)^2 )
+true
+```
 """
 mass2( xdata, ydata, method::IntegrationMethod = TrapezoidalFast() ) = NumericalIntegration.integrate( xdata, ydata .^ 2, method ) 
 @doc raw"""
