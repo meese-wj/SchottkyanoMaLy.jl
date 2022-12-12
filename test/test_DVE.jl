@@ -133,5 +133,28 @@ using Distributions
 
     end
 
+    @testset "Test RandomDonutVolcanoGenerator" begin
+        
+        @testset "Assertion errors" begin        
+            @test_throws AssertionError RandomDonutVolcanoGenerator(3, 10, 10, 0, 0., 1e-2)
+            @test_throws AssertionError RandomDonutVolcanoGenerator(1, 10, 10, 1, 0., 1e-2)
+            @test_throws AssertionError RandomDonutVolcanoGenerator(0, 10, 10, 1, 0., 1e-2)
+            
+            @test_throws AssertionError RandomDonutVolcanoGenerator(3, 10, 10, 1, -1., 1e-2)
+            @test_throws AssertionError RandomDonutVolcanoGenerator(3, -1, 10, 1, 0., 1e-2)
+            
+            @test_throws AssertionError RandomDonutVolcanoGenerator(3, 10, 10, 1, 0., 0.)
+            @test_throws AssertionError RandomDonutVolcanoGenerator(3, 10, 10, 1, 0., -1.0)
+            @test_throws AssertionError RandomDonutVolcanoGenerator(3, 10, -1, 1, 0., 1e-2)
+        end
+
+        @testset "Random ensembles" begin
+            rdveg = RandomDonutVolcanoGenerator(3, 10, 10)
+            num_ens = 100
+            @test length( rand(rdveg, num_ens) ) == num_ens
+        end
+
+    end
+
 end
 println()

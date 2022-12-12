@@ -1,11 +1,13 @@
-
+using Random
+using Distributions
 using SpecialFunctions
-import Base: eltype, push!, append!
+import Base: eltype, push!, append!, rand
 
 # Base overloads
-export eltype, push!, append!
+export eltype, push!, append!, rand
 # DonutVolcanoEnsemble stuff
-export donutvolcano, DonutVolcanoEnsemble, ensemble, μvalue, σvalue
+export donutvolcano, DonutVolcanoEnsemble, ensemble, μvalue, σvalue,
+       RandomDonutVolcanoGenerator
 
 @doc raw"""
     Theta(x)
@@ -255,3 +257,84 @@ function (dve::DonutVolcanoEnsemble)(x)
 	end
 	return output ./ npairs(dve)
 end
+
+"""
+    RandomDonutVolcanoGenerator{T <: Real}
+
+Object to generate a random [`DonutVolcanoEnsemble`](@ref).
+"""
+struct RandomDonutVolcanoGenerator{T <: Real}
+    ndist::DiscreteUniform
+    μdist::Uniform
+    σdist::Uniform
+
+    function RandomDonutVolcanoGenerator{T}( nmax::Int, μmax, σmax, nmin::Int = 1, μmin = 0., σmin = 1e-2 ) where T
+        nmin, nmax = promote(nmin, nmax)
+        μmin, μmax = T(μmin), T(μmax)
+        σmin, σmax = T(σmin), T(σmax)
+
+        # Check inputs
+        @assert nmin ≥ one(nmin) "Minimum number of Donut Volcanos must be greater than 1. Got $nmin"
+        @assert nmax > nmin "Maximum number of Donut Volcanos must be greater than the minimum. Got ($nmin, $nmax)."
+        valid((μmin, σmin))
+        valid((μmax, σmax))
+
+        # Construct
+        return new{T}( DiscreteUniform(nmin, nmax), Uniform(μmin, μmax), Uniform(σmin, σmax) )
+    end
+
+    RandomDonutVolcanoGenerator(args...) = RandomDonutVolcanoGenerator{Float64}(args...)
+end
+
+number_distribution(rdveg::RandomDonutVolcanoGenerator) = rdveg.ndist
+center_distribution(rdveg::RandomDonutVolcanoGenerator) = rdveg.μdist
+width_distribution(rdveg::RandomDonutVolcanoGenerator) = rdveg.σdist
+
+"""
+    rand([rng = GLOBAL_RNG], ::RandomDonutVolcanoGenerator{T})
+
+Generate a random [`DonutVolcanoEnsemble`](@ref) of type `T` based on the 
+[`RandomDonutVolcanoGenerator`](@ref) supplied. By default, `T = Float64`.
+
+```jldoctest
+julia> rng = MersenneTwister(42);  # Choice for longevity. Use Xoshiro in practice or the GLOBAL_RNG.
+
+julia> rdveg = RandomDonutVolcanoGenerator(3, 10, 10);
+
+julia> dve = rand(rng, rdveg);     # Suppress output for floating-point error reasons.
+
+julia> for tup ∈ ensemble(dve)
+           @show round.( tup; digits = 6 )
+       end
+round.(tup; digits = 6) = (6.23099, 2.780566)
+round.(tup; digits = 6) = (9.745867, 4.499406)
+round.(tup; digits = 6) = (8.427712, 3.660781)
+```
+"""
+function Base.rand(rng::AbstractRNG, rdveg::RandomDonutVolcanoGenerator{T}) where T
+    num_donuts = rand(rng, number_distribution(rdveg))
+    dve = DonutVolcanoEnsemble(T)
+    for idx ∈ UnitRange(1, num_donuts)
+        μ = rand(rng, center_distribution(rdveg))
+        σ = rand(rng, width_distribution(rdveg))
+        push!(dve, (μ, σ))
+    end
+    return dve
+end
+Base.rand(rdveg::RandomDonutVolcanoGenerator) = Base.rand(Random.GLOBAL_RNG, rdveg)
+
+"""
+    rand([rng = GLOBAL_RNG], ::RandomDonutVolcanoGenerator{T}, num_ensembles::Int)
+
+Return a `Vector` of random [`DonutVolcanoEnsemble`](@ref)s of length `num_ensembles`.
+The type of each [`DonutVolcanoEnsemble`](@ref) is `T`. By default, the `GLOBAL_RNG` is
+used.
+"""
+function Base.rand(rng::AbstractRNG, rdveg::RandomDonutVolcanoGenerator{T}, num_ensembles::Int) where T
+    output = Vector{DonutVolcanoEnsemble{T}}(undef, num_ensembles)
+    for idx ∈ UnitRange(1, num_ensembles)
+        output[idx] = rand(rng, rdveg)
+    end
+    return output
+end
+Base.rand(rdveg::RandomDonutVolcanoGenerator, num_ensembles::Int) = Base.rand(Random.GLOBAL_RNG, rdveg, num_ensembles)
