@@ -1,13 +1,14 @@
 using Random
 using Distributions
 using SpecialFunctions
+using QuadGK
 import Base: eltype, push!, append!, rand
 
 # Base overloads
 export eltype, push!, append!, rand
 # DonutVolcanoEnsemble stuff
 export donutvolcano, DonutVolcanoEnsemble, ensemble, μvalue, σvalue,
-       RandomDonutVolcanoGenerator
+       specific_heat, RandomDonutVolcanoGenerator
 
 @doc raw"""
     Theta(x)
@@ -258,6 +259,25 @@ function (dve::DonutVolcanoEnsemble)(x)
 	return output ./ npairs(dve)
 end
 
+@doc raw"""
+    specific_heat([::NLevelSystem = TwoLevelSystem()], T, ::DonutVolcanoEnsemble, [Δmin = 0, Δmax = Inf])
+
+Calculate the [`specific_heat`](@ref) ``\tilde{c}_V(T, \Delta`` integrated over the [`DonutVolcanoEnsemble`](@ref)
+for a fixed temperature ``T``. By default, this is calculated for a [`TwoLevelSystem`](@ref).
+    
+The formula for this integration is given by 
+
+```math
+c_V(T) = \int_{\Delta_\min}^{\Delta_\max} \mathrm{d}\Delta\, \mathrm{p}(\Delta) \tilde{c}_V(T, \Delta),
+```
+
+where ``\mathrm{p}(\Delta)`` is calculated from the [`DonutVolcanoEnsemble`](@ref).
+"""
+function specific_heat(nls::NLevelSystem, T, dve::DonutVolcanoEnsemble, Δmin = 0, Δmax = Inf)
+    return quadgk( Δ -> dve(Δ) * specific_heat(nls, T, Δ), Δmin, Δmax )[1]
+end
+specific_heat(T, dve::DonutVolcanoEnsemble, Δmin = 0, Δmax = Inf) = specific_heat(TwoLevelSystem(), T, dve, Δmin, Δmax)
+
 """
     RandomDonutVolcanoGenerator{T <: Real}
 
@@ -297,6 +317,8 @@ Generate a random [`DonutVolcanoEnsemble`](@ref) of type `T` based on the
 [`RandomDonutVolcanoGenerator`](@ref) supplied. By default, `T = Float64`.
 
 ```jldoctest
+julia> using Random 
+
 julia> rng = MersenneTwister(42);  # Choice for longevity. Use Xoshiro in practice or the GLOBAL_RNG.
 
 julia> rdveg = RandomDonutVolcanoGenerator(3, 10, 10);
