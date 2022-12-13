@@ -41,7 +41,7 @@ where we use our own Heaviside [`Theta`](@ref) function above. The normalization
 """
 function donutvolcano(x, μ, σ)
 	normalizer = norm_donutvolcano(μ, σ)
-	return @. @fastmath x * Theta(x) * exp( -0.5 * ( (x - μ) / σ )^2 ) / normalizer
+	return @. x * Theta(x) * exp( -0.5 * ( (x - μ) / σ )^2 ) / normalizer
 end
 
 @doc raw"""
@@ -58,7 +58,7 @@ The explicit form is given by
 """
 function norm_donutvolcano(μ, σ)
 	arg = μ / (σ * sqrt(2))
-	return @fastmath σ^2 * exp( -arg^2 ) + sqrt(π/2) * μ * σ * (oneunit(μ) + erf(arg))
+	return σ^2 * exp( -arg^2 ) + sqrt(π/2) * μ * σ * (oneunit(μ) + erf(arg))
 end
 
 @doc raw"""
@@ -254,7 +254,7 @@ julia> dve([3, 4])
 function (dve::DonutVolcanoEnsemble)(x)
 	output = zero.(x)
 	@inbounds for pdx ∈ UnitRange(1, npairs(dve))
-		output += @fastmath donutvolcano(x, get_pair(dve, pdx)...)
+		output += donutvolcano(x, get_pair(dve, pdx)...)
 	end
 	return output ./ npairs(dve)
 end
