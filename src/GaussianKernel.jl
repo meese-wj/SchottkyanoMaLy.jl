@@ -60,4 +60,4 @@ K[y_1(x), y_2(x); \sigma] = \exp\left[ - \frac{d^2[y_1(x), y_2(x)]}{2\sigma^2} \
 
 where ``d^2`` is the [`dist2`](@ref) functional.
 """
-gausskernel(xdata, y1, y2, hypσ, method::IntegrationMethod = TrapezoidalFast()) = exp( -dist2(xdata, y1, y2, method) / (2 * hypσ^2) )
+gausskernel(xdata, y1, y2, hypσ, method::IntegrationMethod = TrapezoidalFast()) = @fastmath exp( -dist2(xdata, y1, y2, method) / (2 * hypσ^2) )
