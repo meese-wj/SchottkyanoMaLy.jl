@@ -268,7 +268,7 @@ for a fixed temperature ``T``. By default, this is calculated for a [`TwoLevelSy
 The formula for this integration is given by 
 
 ```math
-c_V(T) = \int_{\Delta_\min}^{\Delta_\max} \mathrm{d}\Delta\, \mathrm{p}(\Delta) \tilde{c}_V(T, \Delta),
+c_V(T) = \int_{\Delta_{\min}}^{\Delta_{\max}} \mathrm{d}\Delta\, \mathrm{p}(\Delta) \tilde{c}_V(T, \Delta),
 ```
 
 where ``\mathrm{p}(\Delta)`` is calculated from the [`DonutVolcanoEnsemble`](@ref).
