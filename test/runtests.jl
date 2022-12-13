@@ -5,6 +5,6 @@ using Test
 
     include("test_statmech.jl")
     include("test_DVE.jl")
-    include("doctests.jl")
+    # include("doctests.jl")
 
 end
