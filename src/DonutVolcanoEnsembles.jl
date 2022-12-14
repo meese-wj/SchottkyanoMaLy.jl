@@ -276,7 +276,6 @@ where ``\mathrm{p}(\Delta)`` is calculated from the [`DonutVolcanoEnsemble`](@re
 function specific_heat(nls::NLevelSystem, Temp::Real, dve::DonutVolcanoEnsemble, Δmin = 0, Δmax = Inf; rtol = sqrt(eps()))
     return quadgk( Δ -> dve(Δ) * specific_heat(nls, Temp, Δ), Δmin, Δmax; rtol = rtol )[1]
 end
-
 function specific_heat(nls::NLevelSystem, Temps::AbstractArray, dve::DonutVolcanoEnsemble, Δmin = 0, Δmax = Inf; rtol = sqrt(eps()))
     output = similar(Temps)
     for (Tdx, Temp) ∈ enumerate(Temps)
