@@ -253,8 +253,9 @@ julia> dve([3, 4])
 """
 function (dve::DonutVolcanoEnsemble)(x)
 	output = zero.(x)
-	@inbounds for pdx ∈ UnitRange(1, length(dve))
-		output += donutvolcano(x, get_pair(dve, pdx)...)
+	@inbounds @simd for pdx ∈ eachindex(ensemble(dve))
+        (μ, σ) = get_pair(dve, pdx)
+		output += donutvolcano(x, μ, σ)
 	end
 	return output ./ length(dve)
 end
