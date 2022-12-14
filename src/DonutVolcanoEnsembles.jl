@@ -273,8 +273,16 @@ c_V(T) = \int_{\Delta_{\min}}^{\Delta_{\max}} \mathrm{d}\Delta\, \mathrm{p}(\Del
 
 where ``\mathrm{p}(\Delta)`` is calculated from the [`DonutVolcanoEnsemble`](@ref).
 """
-function specific_heat(nls::NLevelSystem, T, dve::DonutVolcanoEnsemble, Δmin = 0, Δmax = Inf; rtol = sqrt(eps()))
-    return quadgk( Δ -> dve(Δ) * specific_heat(nls, T, Δ), Δmin, Δmax; rtol = rtol )[1]
+function specific_heat(nls::NLevelSystem, Temp::Real, dve::DonutVolcanoEnsemble, Δmin = 0, Δmax = Inf; rtol = sqrt(eps()))
+    return quadgk( Δ -> dve(Δ) * specific_heat(nls, Temp, Δ), Δmin, Δmax; rtol = rtol )[1]
+end
+
+function specific_heat(nls::NLevelSystem, Temps::AbstractArray, dve::DonutVolcanoEnsemble, Δmin = 0, Δmax = Inf; rtol = sqrt(eps()))
+    output = similar(Temps)
+    for (Tdx, Temp) ∈ enumerate(Temps)
+        output[Tdx] = specific_heat(nls, Temp, dve, Δmin, Δmax; rtol = rtol)
+    end
+    return output
 end
 specific_heat(T, dve::DonutVolcanoEnsemble, Δmin = 0, Δmax = Inf; rtol = sqrt(eps())) = specific_heat(TwoLevelSystem(), T, dve, Δmin, Δmax; rtol = rtol)
 
