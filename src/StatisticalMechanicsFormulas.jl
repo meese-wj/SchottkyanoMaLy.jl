@@ -36,7 +36,7 @@ julia> specific_heat(TwoLevelSystem(), 1, 1)
 0.41997434161402614
 ```
 """
-specific_heat(::TwoLevelSystem, T, Δ) = @. ( Δ / T * sech( Δ / T ) )^2
+specific_heat(::TwoLevelSystem, T, Δ) = @. ( @fastmath Δ / T * sech( Δ / T ) )^2
 """
     specific_heat(T, Δ) = specific_heat(TwoLevelSystem, T, Δ)
 
