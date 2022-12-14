@@ -303,7 +303,7 @@ struct RandomDonutVolcanoGenerator{T <: Real}
 
         # Check inputs
         @assert nmin ≥ one(nmin) "Minimum number of Donut Volcanos must be greater than 1. Got $nmin"
-        @assert nmax > nmin "Maximum number of Donut Volcanos must be greater than the minimum. Got ($nmin, $nmax)."
+        @assert nmax ≥ nmin "Maximum number of Donut Volcanos must be greater than or equal to the minimum. Got ($nmin, $nmax)."
         valid((μmin, σmin))
         valid((μmax, σmax))
 

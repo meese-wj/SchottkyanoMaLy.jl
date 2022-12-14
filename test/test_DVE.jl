@@ -137,7 +137,6 @@ using Distributions
         
         @testset "Assertion errors" begin        
             @test_throws AssertionError RandomDonutVolcanoGenerator(3, 10, 10, 0, 0., 1e-2)
-            @test_throws AssertionError RandomDonutVolcanoGenerator(1, 10, 10, 1, 0., 1e-2)
             @test_throws AssertionError RandomDonutVolcanoGenerator(0, 10, 10, 1, 0., 1e-2)
             
             @test_throws AssertionError RandomDonutVolcanoGenerator(3, 10, 10, 1, -1., 1e-2)
