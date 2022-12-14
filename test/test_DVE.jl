@@ -112,10 +112,10 @@ using Distributions
 
             @testset "Empty constructors" begin
                 dve = DonutVolcanoEnsemble()
-                @test SchottkyAnoMaLy.npairs(dve) == length(ensemble(dve)) == zero(Int)
+                @test length(dve) == length(ensemble(dve)) == zero(Int)
                 
                 dve = DonutVolcanoEnsemble(Int32)
-                @test SchottkyAnoMaLy.npairs(dve) == length(ensemble(dve)) == zero(Int)
+                @test length(dve) == length(ensemble(dve)) == zero(Int)
             end
 
             @testset "Push and Append protection" begin

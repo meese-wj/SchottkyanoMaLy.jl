@@ -2,10 +2,10 @@ using Random
 using Distributions
 using SpecialFunctions
 using QuadGK
-import Base: eltype, push!, append!, rand
+import Base: length, eltype, push!, append!, rand
 
 # Base overloads
-export eltype, push!, append!, rand
+export length, eltype, push!, append!, rand
 # DonutVolcanoEnsemble stuff
 export donutvolcano, DonutVolcanoEnsemble, ensemble, μvalue, σvalue,
        specific_heat, RandomDonutVolcanoGenerator
@@ -153,11 +153,11 @@ Getter for a single pair (`Tuple{T, T}`) at a specified `pair_idx`.
 """
 get_pair(dve::DonutVolcanoEnsemble, pair_idx) = Tuple( ensemble(dve)[pair_idx] )
 """
-    npairs(::DonutVolcanoEnsemble)
+    length(::DonutVolcanoEnsemble)
 
 Return the number of [`donutvolcano`](@ref) in the [`DonutVolcanoEnsemble`](@ref).
 """
-npairs(dve::DonutVolcanoEnsemble) = length(ensemble(dve))
+Base.length(dve::DonutVolcanoEnsemble) = length(ensemble(dve))
 """
     μvalue(::Tuple{T, T})
     μvalue(::DonutVolcanoEnsemble, idx)
@@ -253,10 +253,10 @@ julia> dve([3, 4])
 """
 function (dve::DonutVolcanoEnsemble)(x)
 	output = zero.(x)
-	@inbounds for pdx ∈ UnitRange(1, npairs(dve))
+	@inbounds for pdx ∈ UnitRange(1, length(dve))
 		output += donutvolcano(x, get_pair(dve, pdx)...)
 	end
-	return output ./ npairs(dve)
+	return output ./ length(dve)
 end
 
 @doc raw"""
