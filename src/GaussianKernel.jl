@@ -1,12 +1,12 @@
 
 using NumericalIntegration
 
-export gausskernel
+export msdiff, gausskernel
 
 @doc raw"""
     mass2( xdata, ydata, [method = TrapezoidalFast()] )
 
-Use `NumericalIntegration.jl` to compute the "square mass" of a set of data
+Use `NumericalIntegration.jl` to compute the "mean-square-mass" of a set of data
 `ydata` over the domain `xdata`. 
 
 !!! note
@@ -15,10 +15,10 @@ Use `NumericalIntegration.jl` to compute the "square mass" of a set of data
     data inputs, however, this should be fine because the specific heat is 
     measured for a specific temperature.
 
-The square-mass formula, given as a continuous integral, is 
+The mean-square-mass formula, given as a continuous integral, is 
 
 ```math
-M^2[y(x)] = \int_a^b \mathrm{d}x\, \left[ y(x) \right]^2.
+m^2[y(x)] = \frac{1}{b - a}\int_a^b \mathrm{d}x\, \left[ y(x) \right]^2.
 ```
 
 ```jldoctest
@@ -27,27 +27,27 @@ julia> xvals = LinRange(1, 10, 10);
 julia> yvals = sqrt.(xvals);  # In this case the trapezoidal rule is exact
 
 julia> value = SchottkyAnoMaLy.mass2(xvals, yvals)
-49.5
+5.5
 
-julia> value ≈ 1/2 * ( maximum(xvals)^2 - minimum(xvals)^2 )
+julia> value ≈ 1/(10 - 1) * 1/2 * ( maximum(xvals)^2 - minimum(xvals)^2 )
 true
 ```
 """
-mass2( xdata, ydata, method::IntegrationMethod = TrapezoidalFast() ) = NumericalIntegration.integrate( xdata, ydata .^ 2, method ) 
+mass2( xdata, ydata, method::IntegrationMethod = TrapezoidalFast() ) = 1 / (xdata[end] - xdata[begin]) * NumericalIntegration.integrate( xdata, ydata .^ 2, method ) 
 @doc raw"""
-    dist2(xdata, y1data, y2data, [method = TrapezoidalFast()])
+    msdiff(xdata, y1data, y2data, [method = TrapezoidalFast()])
 
-Compute the square-distance between two sets of `ydata` on the given `xdata` domain.
+Compute the mean-square-difference between two sets of `ydata` on the given `xdata` domain.
 This function calls [`mass2`](@ref) to perform the integration. 
 
-The formula for the square distance between functions ``y_1`` and ``y_2`` on the 
+The formula for the mean-square-difference between functions ``y_1`` and ``y_2`` on the 
 continuous interval `(a,b)` is given by 
 
 ```math
-d^2(y_1, y_2) = M^2[y_1(x) - y_2(x)] = \int_a^b \mathrm{d}x\, \left[ y_1(x) - y_2(x) \right]^2.
+d^2(y_1, y_2) = m^2[y_1(x) - y_2(x)] = \frac{1}{b - a}\int_a^b \mathrm{d}x\, \left[ y_1(x) - y_2(x) \right]^2.
 ```
 """
-dist2(xdata, y1, y2, method::IntegrationMethod = TrapezoidalFast()) = mass2(xdata, y1 .- y2, method)
+msdiff(xdata, y1, y2, method::IntegrationMethod = TrapezoidalFast()) = mass2(xdata, y1 .- y2, method)
 @doc raw"""
     gausskernel(xdata, y1data, y2data, hypσ, [method = TrapezoidalFast()])
 
@@ -58,6 +58,6 @@ This kernel function is of the form
 K[y_1(x), y_2(x); \sigma] = \exp\left[ - \frac{d^2[y_1(x), y_2(x)]}{2\sigma^2} \right],
 ```
 
-where ``d^2`` is the [`dist2`](@ref) functional.
+where ``d^2`` is the [`msdiff`](@ref) functional.
 """
-gausskernel(xdata, y1, y2, hypσ, method::IntegrationMethod = TrapezoidalFast()) = @fastmath exp( -dist2(xdata, y1, y2, method) / (2 * hypσ^2) )
+gausskernel(xdata, y1, y2, hypσ, method::IntegrationMethod = TrapezoidalFast()) = @fastmath exp( -msdiff(xdata, y1, y2, method) / (2 * hypσ^2) )
