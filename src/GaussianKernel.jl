@@ -1,7 +1,7 @@
 
 using NumericalIntegration
 
-export msdiff, gausskernel
+export msqdiff, gausskernel
 
 @doc raw"""
     mass2( xdata, ydata, [method = TrapezoidalFast()] )
@@ -35,7 +35,7 @@ true
 """
 mass2( xdata, ydata, method::IntegrationMethod = TrapezoidalFast() ) = 1 / (xdata[end] - xdata[begin]) * NumericalIntegration.integrate( xdata, ydata .^ 2, method ) 
 @doc raw"""
-    msdiff(xdata, y1data, y2data, [method = TrapezoidalFast()])
+    msqdiff(xdata, y1data, y2data, [method = TrapezoidalFast()])
 
 Compute the mean-square-difference between two sets of `ydata` on the given `xdata` domain.
 This function calls [`mass2`](@ref) to perform the integration. 
@@ -47,8 +47,9 @@ continuous interval `(a,b)` is given by
 d^2(y_1, y_2) = m^2[y_1(x) - y_2(x)] = \frac{1}{b - a}\int_a^b \mathrm{d}x\, \left[ y_1(x) - y_2(x) \right]^2.
 ```
 """
-msdiff(xdata, y1, y2, method::IntegrationMethod = TrapezoidalFast()) = mass2(xdata, y1 .- y2, method)
+msqdiff(xdata, y1, y2, method::IntegrationMethod = TrapezoidalFast()) = mass2(xdata, y1 .- y2, method)
 @doc raw"""
+    gausskernel(d2, hypσ, [method = TrapezoidalFast()])
     gausskernel(xdata, y1data, y2data, hypσ, [method = TrapezoidalFast()])
 
 Compute the Gaussian kernel function for two sets of `ydata`, given the hyperparameter `hypσ`. 
@@ -58,6 +59,7 @@ This kernel function is of the form
 K[y_1(x), y_2(x); \sigma] = \exp\left[ - \frac{d^2[y_1(x), y_2(x)]}{2\sigma^2} \right],
 ```
 
-where ``d^2`` is the [`msdiff`](@ref) functional.
+where ``d^2`` is the [`msqdiff`](@ref) functional.
 """
-gausskernel(xdata, y1, y2, hypσ, method::IntegrationMethod = TrapezoidalFast()) = @fastmath exp( -msdiff(xdata, y1, y2, method) / (2 * hypσ^2) )
+gausskernel(d2, hypσ) = @fastmath exp( -d2 / (2 * hypσ^2) )
+gausskernel(xdata, y1, y2, hypσ, method::IntegrationMethod = TrapezoidalFast()) = gausskernel( msqdiff(xdata, y1, y2, method), hypσ )
