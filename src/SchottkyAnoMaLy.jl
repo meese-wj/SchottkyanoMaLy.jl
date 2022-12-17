@@ -5,6 +5,7 @@ using Distributions
 using FastChebInterp
 using LinearAlgebra
 
+include("PackageHelpers.jl")
 include("StatisticalMechanicsFormulas.jl")
 include("DonutVolcanoEnsembles.jl")
 include("GaussianKernel.jl")
