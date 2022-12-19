@@ -7,4 +7,6 @@
 
 A lightweight package to solve for level-splitting distributions from measured specific heat data via supervised machine learning.
 
+![regression picture](docs/assets/schottky_kernel_regression.svg)
+
 **Disclaimer:** This package is still in an experimental phase is is subject to change frequently, likely with breaking changes.
