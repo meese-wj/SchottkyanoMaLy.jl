@@ -40,7 +40,7 @@ where ``\boldsymbol{K}^T_{in}`` `= kernel_column`, the whole inverse is `inv_ker
 function minimizing_component( kernel_column, inv_kernel_matrix, train_component_vector )
     return minimizing_component( view(kernel_matrix_transformation(kernel_column, inv_kernel_matrix), :, :), train_component_vector )
 end
-minimizing_component( kernel_matrix_prefactor, train_component_vector ) = return kernel_matrix_prefactor * train_component_vector
+minimizing_component( kernel_matrix_prefactor, train_component_vector ) = return (kernel_matrix_prefactor * train_component_vector)[begin]
 """
     minimizing_solution(kernel_column, inv_kernel_matrix, train_component_matrix)
 
