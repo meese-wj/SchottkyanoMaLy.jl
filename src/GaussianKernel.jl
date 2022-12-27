@@ -61,11 +61,12 @@ K[y_1(x), y_2(x); \sigma] = \exp\left[ - \frac{d^2[y_1(x), y_2(x)]}{2\sigma^2} \
 
 where ``d^2`` is the [`msqdiff`](@ref) functional.
 """
-gausskernel(d2, hypσ) = @fastmath exp( -d2 / (2 * hypσ^2) )
+gausskernel(d2, hypσ) = @fastmath @. exp( -d2 / (2 * hypσ^2) )
 gausskernel(xdata, y1, y2, hypσ, method::IntegrationMethod = TrapezoidalFast()) = gausskernel( msqdiff(xdata, y1, y2, method), hypσ )
 
 @doc raw"""
     ∂σ_gausskernel(d2, hypσ)  # \partial<TAB>\sigma<TAB>
+    ∂σ_gausskernel(d2, gK, hypσ)  
 
 Calculate the gradient of [`gausskernel`](@ref) with respect to the hyperparameter `hypσ`.
 The explicit formula is given by 
@@ -73,5 +74,9 @@ The explicit formula is given by
 ```math
 \partial_\sigma K(d^2; \sigma) = \sigma^{-3} d^2 K(d^2; \sigma).
 ```
+
+where the ``K(d^2; \sigma)`` function is [`gausskernel`](@ref) and `gK` in the second 
+method for this function.
 """
-∂σ_gausskernel(d2, hypσ) = @fastmath d2 / (hypσ^3) * gausskernel(d2, hypσ)
+∂σ_gausskernel(d2, gK, hypσ) = @fastmath @. (d2 * gK) / (hypσ^3)
+∂σ_gausskernel(d2, hypσ) = ∂σ_gausskernel(d2, gausskernel(d2, hypσ), hypσ)
