@@ -1,7 +1,7 @@
 
 using NumericalIntegration
 
-export msqdiff, gausskernel
+export msqdiff, gausskernel, ∂σ_gausskernel
 
 @doc raw"""
     mass2( xdata, ydata, [method = TrapezoidalFast()] )
@@ -63,3 +63,15 @@ where ``d^2`` is the [`msqdiff`](@ref) functional.
 """
 gausskernel(d2, hypσ) = @fastmath exp( -d2 / (2 * hypσ^2) )
 gausskernel(xdata, y1, y2, hypσ, method::IntegrationMethod = TrapezoidalFast()) = gausskernel( msqdiff(xdata, y1, y2, method), hypσ )
+
+@doc raw"""
+    ∂σ_gausskernel(d2, hypσ)  # \partial<TAB>\sigma<TAB>
+
+Calculate the gradient of [`gausskernel`](@ref) with respect to the hyperparameter `hypσ`.
+The explicit formula is given by 
+
+```math
+\partial_\sigma K(d^2; \sigma) = \sigma^{-3} d^2 K(d^2; \sigma).
+```
+"""
+∂σ_gausskernel(d2, hypσ) = @fastmath d2 / (hypσ^3) * gausskernel(d2, hypσ)
