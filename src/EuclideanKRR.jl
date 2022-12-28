@@ -1,5 +1,5 @@
 
-export regularized_inverse, minimizing_component, minimizing_solution
+export regularized_inverse, minimizing_component, minimizing_solution, InterpolationSet, TrainingSet
 
 regularized_inverse(kernel_matrix, hypλ) = inv(kernel_matrix + hypλ * one(kernel_matrix))
 
@@ -55,4 +55,27 @@ function minimizing_solution( kernel_column, inv_kernel_matrix, train_component_
         output_components[idx] = minimizing_component( view(kernel_prefactor, :, :), view(train_component_matrix, :, idx) )
     end
     return output_components
+end
+
+"""
+    InterpolationSet{T <: Real}
+
+Container around the relevant arrays used for the interpolations in
+Kernel Ridge Regression.
+"""
+struct InterpolationSet{T <: Real}
+    cheby_components::Matrix{T}
+    msqdiff_Gram::Matrix{T}
+end
+
+"""
+    TrainingSet{T <: Real}
+
+Container around the relevant arrays used for the training of the 
+regularized Kernel Ridge Regression model.
+"""
+struct TrainingSet{T <: Real}
+    cheby_components::Matrix{T}
+    predicted_components::Matrix{T}
+    msqdiff_interpolation::Matrix{T}
 end
