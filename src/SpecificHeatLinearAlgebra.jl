@@ -81,7 +81,7 @@ This function uses [`input_test_msqdiffs!`](@ref) to fill the `Matrix`. The `inp
 specific heat of a given ensemble, and the `test`s are those from all other ensembles.
 
 !!! note
-`N` is likely to be a large number, so it is best to use this function once.
+    `N` is likely to be a large number, so it is best to use this function once.
 """
 function populate_msqdiffs!( msqdiff_mat, cV_arr, temps; method = TrapezoidalFast() )
     # Not true anymore...
