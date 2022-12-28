@@ -20,7 +20,7 @@ The mathematics for this gradient, as a function of the hyperparameters ``\sigma
 with 
 
 ```math
-\tilde{f}^m = \boldsymbol{\nu}^{\mathrm{T}}(\sigma) \left[ K(\sigma) + \lambda \mathbb{1} ]^{-1} \boldsymbol{f}^m.
+\tilde{f}^m = \boldsymbol{\nu}^{\mathrm{T}}(\sigma) \left[ K(\sigma) + \lambda \mathbb{1} \right]^{-1} \boldsymbol{f}^m.
 ```
 
 ``\boldsymbol{\nu}`` is the ``N_{\mathrm{interp}} \times 1`` `Vector` comprised of the [`gausskernel`](@ref) calculated between
