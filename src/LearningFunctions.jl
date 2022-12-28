@@ -37,7 +37,7 @@ the interpolation set.
 Recalling that 
 
 ```math
-\partial_\lambda \tilde{f}^m = - \boldsymbol{\nu}^{\mathrm{T}} M^{-1} M^{-1} \boldsymbol{f}^m,
+\partial (M^{-1}) = - M^{-1} (\partial M) M^{-1},
 ```
 
 it follows 
