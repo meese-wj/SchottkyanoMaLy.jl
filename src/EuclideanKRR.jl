@@ -61,12 +61,33 @@ end
     InterpolationSet{T <: Real}
 
 Container around the relevant arrays used for the interpolations in
-Kernel Ridge Regression.
+Kernel Ridge Regression. 
+
+
+# Contents
+
+It is assumed that the order of the Chebyshev interpolation is `n` and the 
+number of ensembles in the interpolation set is `N`.
+
+* `cheby_components::Matrix{T}`: an `N × (n + 1)` matrix of the Chebyshev coefficients for all ensembles in the `InterpolationSet`.
+* `msqdiff_Gram::Matrix{T}`: an `N × N` matrix of the [`msqdiff`](@ref) values between each of the ensembles in the `InterpolationSet`.
+* `inv_Gram::Matrix{T}`: an `N × N` matrix used as a temporary placeholder for the intermediary calculations, for example, the inverse of the regularized Gram matrix. 
 """
 struct InterpolationSet{T <: Real}
     cheby_components::Matrix{T}
     msqdiff_Gram::Matrix{T}
+    inv_Gram::Matrix{T}
 end
+
+function InterpolationSet( _cheby_components, _msqdiff_Gram )
+    @assert size(_cheby_components)[1] == size(_msqdiff_Gram)[1] == size(_msqdiff_Gram)[2] "Size mismatch. Got $(size(_cheby_components)) and $(size(_msqdiff_Gram))."
+    new_type = promote_type( eltype(_cheby_components), eltype(_msqdiff_Gram) )
+    return InterpolationSet{new_type}( new_type.(_cheby_components), new_type.(_msqdiff_Gram), zeros(new_type, size(_msqdiff_Gram)...) )
+end
+
+cheby_components(intset::InterpolationSet, order) = view( intset.cheby_components, :, order )
+msqdiff_Gram(intset::InterpolationSet) = view(intset.msqdiff_Gram, :, :)
+inv_Gram(intset::InterpolationSet) = view(intset.inv_Gram, : ,:)
 
 """
     TrainingSet{T <: Real}

@@ -20,11 +20,11 @@ The mathematics for this gradient, as a function of the hyperparameters ``\sigma
 with 
 
 ```math
-\tilde{f}^m = \boldsymbol{\nu}^{\mathrm{T}}(\sigma) \left[ K(\sigma) + \lambda \mathds{1} ]^{-1} \boldsymbol{f}^m.
+\tilde{f}^m = \boldsymbol{\nu}^{\mathrm{T}}(\sigma) \left[ K(\sigma) + \lambda \mathbb{1} ]^{-1} \boldsymbol{f}^m.
 ```
 
 ``\boldsymbol{\nu}`` is the ``N_{\mathrm{interp}} \times 1`` `Vector` comprised of the [`gausskernel`](@ref) calculated between
-the input function and the ``N_{\mathrm{interp}}`` functions in the interpolation set. We define the `Matrix` ``\mathtt{M}(\sigma, \lambda) \equiv \mathtt{K}(\sigma) + \lambda \mathbb{1}``,
+the input function and the ``N_{\mathrm{interp}}`` functions in the interpolation set. We define the `Matrix` ``M(\sigma, \lambda) \equiv K(\sigma) + \lambda \mathbb{1}``,
 such that the predicted component ``\tilde{f}^m`` simplifies to 
 
 ```math
@@ -43,7 +43,7 @@ Recalling that
 it follows 
 
 ```math
-\partial_\lambda \tilde{f}^m = - \boldsymbol{\nu}^{\mathrm{T}} \mathtt{M}^{-1}\mathtt{M}^{-1} \boldsymbol{f}^m,
+\partial_\lambda \tilde{f}^m = - \boldsymbol{\nu}^{\mathrm{T}} M^{-1} M^{-1} \boldsymbol{f}^m,
 ```
 
 and 
