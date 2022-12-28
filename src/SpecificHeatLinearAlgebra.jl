@@ -4,7 +4,7 @@ using NumericalIntegration
 using FastChebInterp
 
 export compute_cVs!, compute_cVs,
-       input_test_msqdiffs, input_test_msqdiffs!,
+       input_reference_msqdiffs, input_reference_msqdiffs!,
        populate_msqdiffs!, populate_msqdiffs,
        kernel
 
@@ -44,13 +44,13 @@ function compute_cVs(ensembles, temps; kwargs...)
     return compute_cVs!(cV_arr, ensembles, temps; kwargs...)
 end
 """
-    input_test_msqdiffs!(output, test_cV, cV_arr, temps, [method = TrapezoidalFast()])
+    input_reference_msqdiffs!(output, test_cV, cV_arr, temps, [method = TrapezoidalFast()])
 
 Compute a single column vector of the [`msqdiff`](@ref)s between the `test_cV`
 argument and each column of the `cV_arr`, all measured as functions of `temps` 
 temperature. Store the result in the `output` vector.
 """
-function input_test_msqdiffs!(output, test_cV, cV_arr, temps; method = TrapezoidalFast())
+function input_reference_msqdiffs!(output, test_cV, cV_arr, temps; method = TrapezoidalFast())
     @assert length(test_cV) == size(cV_arr)[1] == length(temps) "Size mismatch. Each specific heat must have the same number of temperatures ($(length(temps))). Got $(length(test_cV)) and $(size(cV_arr)[1])."
     @assert length(output) == size(cV_arr)[2] "Size mismatch. The length of the output vector must be the number of ensembles. Got $(length(output)) and $(size(cV_arr)[2])."
     @inbounds @simd for idx ∈ eachindex(output)
@@ -59,13 +59,13 @@ function input_test_msqdiffs!(output, test_cV, cV_arr, temps; method = Trapezoid
     return output
 end
 """
-    input_test_msqdiffs(test_cV, cV_arr, temps, [method = TrapezoidalFast()])
+    input_reference_msqdiffs(test_cV, cV_arr, temps, [method = TrapezoidalFast()])
 
-Allocate an appropriate `output` `Vector` and pass it to [`input_test_msqdiffs!`](@ref).
+Allocate an appropriate `output` `Vector` and pass it to [`input_reference_msqdiffs!`](@ref).
 """
-function input_test_msqdiffs(test_cV, cV_arr, temps; method = TrapezoidalFast())
+function input_reference_msqdiffs(test_cV, cV_arr, temps; method = TrapezoidalFast())
     output = zeros(eltype(test_cV), size(cV_arr)[2])
-    return input_test_msqdiffs!(output, test_cV, cV_arr, temps; method = method)
+    return input_reference_msqdiffs!(output, test_cV, cV_arr, temps; method = method)
 end
 """
     populate_msqdiffs!( msqdiff_mat, cV_arr, temps; [kwargs...])
@@ -77,7 +77,7 @@ a function of temperature (`temps`) as the `xdata`. This assumes that
 2. `N == size(cV_arr)[2]`, where `cV_arr` is a specific heat `Matrix` calculated from [`compute_cVs!`](@ref),
 3. the number of temperatures in `temps` equals the number of specific heat rows.
 
-This function uses [`input_test_msqdiffs!`](@ref) to fill the `Matrix`. The `input` is the 
+This function uses [`input_reference_msqdiffs!`](@ref) to fill the `Matrix`. The `input` is the 
 specific heat of a given ensemble, and the `test`s are those from all other ensembles.
 
 !!! note
@@ -94,9 +94,9 @@ function populate_msqdiffs!( msqdiff_mat, cV_arr, temps; method = TrapezoidalFas
     NL = size(msqdiff_mat)[1]
     @inbounds Threads.@threads for col ∈ UnitRange(1, NL)
         ycol = @view cV_arr[:, col]
-        input_test_msqdiffs!(view(msqdiff_mat, :, col), ycol, cV_arr, temps; method = method)
+        input_reference_msqdiffs!(view(msqdiff_mat, :, col), ycol, cV_arr, temps; method = method)
     end
-    # TODO: Should I keep this method or rely on input_test_msqdiffs?
+    # TODO: Should I keep this method or rely on input_reference_msqdiffs?
     #     msqdiff_mat[col, col] = 0.5 * msqdiff( temps, ycol, ycol, method ) # half because it will be added back in the transpose
     #     @simd for row ∈ UnitRange(col + oneunit(col), NL)
     #         yrow = @view cV_arr[:, row]

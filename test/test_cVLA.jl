@@ -14,17 +14,17 @@ using SchottkyAnoMaLy
         mat = zeros(6, 6)
         @test_throws AssertionError populate_msqdiffs!(mat, cV_arr, temps)
 
-        # Test input_test_msqdiffs
+        # Test input_reference_msqdiffs
         temps = zeros(10)
         cV_arr = zeros(9, 9)
         test_cV = zeros(9)
-        @test_throws AssertionError input_test_msqdiffs(test_cV, cV_arr, temps)
+        @test_throws AssertionError input_reference_msqdiffs(test_cV, cV_arr, temps)
 
         cV_arr = zeros(10, 9)
-        @test_throws AssertionError input_test_msqdiffs(test_cV, cV_arr, temps)
+        @test_throws AssertionError input_reference_msqdiffs(test_cV, cV_arr, temps)
         
         output = zeros(9)
-        @test_throws AssertionError input_test_msqdiffs!(output, test_cV, cV_arr, temps)
+        @test_throws AssertionError input_reference_msqdiffs!(output, test_cV, cV_arr, temps)
         
     end
 
