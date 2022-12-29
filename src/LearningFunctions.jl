@@ -90,7 +90,7 @@ function total_loss_gradient( updated_trainset, updated_interpset )
     out_type = Base.eltype(updated_trainset)
     output_σ::out_type = zero(out_type)
     output_λ::out_type = zero(out_type)
-    for comp_idx ∈ UnitRange(1, num_comps)
+    @inbounds for comp_idx ∈ UnitRange(1, num_comps)
         output = mean_component_loss_gradient(comp_idx, updated_trainset, updated_interpset)
         output_σ += output[1]
         output_λ += output[2]
