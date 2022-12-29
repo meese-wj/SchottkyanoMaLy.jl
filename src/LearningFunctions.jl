@@ -5,7 +5,7 @@ single_component_deviation(prediction, value) = @fastmath @. prediction - value
 single_component_loss(prediction, value) = @fastmath @. 0.5 * single_component_deviation(prediction, value)^2
 
 @doc raw"""
-    single_component_loss_gradient(prediction, value, νT_Minv, Qmat, Minv, fcomp_vector, ∂σd2_ν_vector)
+    single_component_loss_gradient(prediction, value, νvector, Qmat, Minv, fcomp_vector, ∂σd2_ν_vector)
 
 Compute the loss gradient for a single component (taken analytically of [`single_component_loss`](@ref)). 
     
@@ -54,11 +54,20 @@ and
 
 The `Vector` ``\sigma^{-3}(d^2 \boldsymbol{\nu})`` is the element-wise derivative of ``\boldsymbol{\nu}`` and the matrix ``Q(\sigma, \lambda)`` is that for ``K(\sigma, \lambda)``.
 """
-function single_component_loss_gradient( prediction, value, νT_Minv, Qmat, Minv, fcomp_vector, ∂σd2_ν_vector )
-    Minv_f_vector = Minv * fcomp_vector
-    ∂σval = ( transpose(∂σd2_ν_vector) + νT_Minv * Qmat ) * Minv_f_vector
-    ∂λval = KinT_Minv * Minv_f_vector
-    return -single_component_deviation(prediction, value) .* ( ∂σval[1], ∂λval[1] )
+function single_component_loss_gradient( prediction, value, νvector, ∂σνvector, Qmat, Minv, fcomp_vector )
+    Minv_f_vector = Minv * fcomp_vector # column vector
+    νT_Minv = transpose(νvector) * Minv # row vector
+    ∂σval  = dot( ∂σνvector, Minv_f_vector) # column ⋅ column
+    ∂σval += dot( transpose(νT_Minv), transpose(Qmat), Minv_f_vector) # equivalent to νT_Minv * Qmat * Minv_f_vector (column ⋅ matrix' ⋅ column)
+    ∂λval = dot( νvector, Minv, Minv_f_vector ) # colum ⋅ colum
+    return single_component_deviation(prediction, value) .* ( ∂σval, ∂λval ) # return a Tuple as the gradient ∇ = (∂σ, ∂λ)
+end
+function single_component_loss_gradient( component_idx, ensemble_idx, updated_trainset::TrainingSet, updated_interpset::InterpolationSet )
+    pred = predicted_components(updated_trainset)[component_idx, ensemble_idx]
+    val  = cheby_components(updated_trainset)[component_idx, ensemble_idx]
+    return single_component_loss_gradient(pred, val, 
+                                          gausskernel_TvI(trainset, ensemble_idx), gausskernel_deriv_TvI(trainset, ensemble_idx),
+                                          deriv_Gram(updated_interpset), inv_Gram(updated_interpset), cheby_components(updated_interpset, component_idx) )
 end
 
 function total_loss( predictions, values )

@@ -224,7 +224,9 @@ predicted_components(trainset::TrainingSet) = trainset.predicted_components
 predicted_components(trainset::TrainingSet, ensemble_idx) = view( predicted_components(trainset), :, ensemble_idx )
 msqdiff_TvI(trainset::TrainingSet) = trainset.msqdiff_TvI
 gausskernel_TvI(trainset::TrainingSet) = trainset.gausskernel_TvI
+gausskernel_TvI(trainset::TrainingSet, ensemble_idx) = view( gausskernel_TvI(trainset), :, ensemble_idx )
 gausskernel_deriv_TvI(trainset::TrainingSet) = trainset.gausskernel_deriv_TvI
+gausskernel_deriv_TvI(trainset::TrainingSet, ensemble_idx) = view( gausskernel_deriv_TvI(trainset), :, ensemble_idx )
 
 function _compute_gausskernel_TvI!(trainset::TrainingSet, hypσ)
     @inbounds @simd for idx ∈ eachindex(gausskernel_TvI(trainset))
