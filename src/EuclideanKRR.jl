@@ -226,9 +226,17 @@ msqdiff_TvI(trainset::TrainingSet) = trainset.msqdiff_TvI
 gausskernel_TvI(trainset::TrainingSet) = trainset.gausskernel_TvI
 gausskernel_deriv_TvI(trainset::TrainingSet) = trainset.gausskernel_deriv_TvI
 
-_compute_gausskernel_TvI!(trainset::TrainingSet, hypσ) = gausskernel_TvI(trainset) .= gausskernel(msqdiff_TvI(trainset), hypσ)
-_compute_deriv_TvI!(trainset::TrainingSet, hypσ) = gausskernel_deriv_TvI(trainset) .= ∂σ_gausskernel(msqdiff_TvI(trainset), gausskernel_TvI(trainset), hypσ) 
-
+function _compute_gausskernel_TvI!(trainset::TrainingSet, hypσ)
+    @inbounds @simd for idx ∈ eachindex(gausskernel_TvI(trainset))
+        gausskernel_TvI(trainset)[idx] = gausskernel(msqdiff_TvI(trainset)[idx], hypσ)
+    end
+    return gausskernel_TvI(trainset)
+end
+function _compute_deriv_TvI!(trainset::TrainingSet, hypσ)
+    @inbounds @simd for idx ∈ eachindex(gausskernel_deriv_TvI(trainset))
+        gausskernel_deriv_TvI(trainset)[idx] = ∂σ_gausskernel(msqdiff_TvI(trainset)[idx], gausskernel_TvI(trainset)[idx], hypσ) 
+    end
+end
 function _compute_predicted_components!(trainset::TrainingSet, ensemble_idx, updated_interpset)
     Minv = inv_Gram(updated_interpset)
     interp_components = cheby_components(updated_interpset)
