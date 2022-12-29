@@ -1,6 +1,8 @@
 
 using LinearAlgebra
 
+export single_component_loss, single_component_loss_gradient
+
 single_component_deviation(prediction, value) = @fastmath @. prediction - value
 single_component_loss(prediction, value) = @fastmath @. 0.5 * single_component_deviation(prediction, value)^2
 
