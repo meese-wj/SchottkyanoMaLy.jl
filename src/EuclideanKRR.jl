@@ -131,9 +131,19 @@ gausskernel_Gram(intset::InterpolationSet) = intset.gausskernel_Gram
 deriv_Gram(intset::InterpolationSet) = intset.deriv_Gram
 inv_Gram(intset::InterpolationSet) = intset.inv_Gram
 
-_compute_gausskernel_Gram!(intset, hypσ) = gausskernel_Gram(intset) .= gausskernel(msqdiff_Gram(intset), hypσ)
-_compute_deriv_Gram!(intset, hypσ) = deriv_Gram(intset) .= ∂σ_gausskernel(msqdiff_Gram(intset), hypσ)
-function _compute_inv_Gram!(intset, hypσ, hypλ) 
+function _compute_gausskernel_Gram!(intset, hypσ)
+    @inbounds @simd for idx ∈ eachindex(msqdiff_Gram(intset))
+        gausskernel_Gram(intset)[idx] = gausskernel(msqdiff_Gram(intset)[idx], hypσ)
+    end
+    return gausskernel_Gram(intset)
+end
+function _compute_deriv_Gram!(intset, hypσ)
+    @inbounds @simd for idx ∈ eachindex(msqdiff_Gram(intset))
+        deriv_Gram(intset)[idx] = ∂σ_gausskernel(msqdiff_Gram(intset)[idx], gausskernel_Gram(intset)[idx], hypσ)
+    end
+    return deriv_Gram(intset)
+end
+function _compute_inv_Gram!(intset, hypλ) 
     Mmat = gausskernel_Gram(intset) + ( hypλ * LinearAlgebra.I )( num_ensembles(intset) )
     inv_Gram(intset) .= inv(Mmat)
 end
@@ -141,7 +151,7 @@ end
 function update!(intset::InterpolationSet, hypσ, hypλ)
     _compute_gausskernel_Gram!(intset, hypσ)
     _compute_deriv_Gram!(intset, hypσ)
-    _compute_inv_Gram!(intset, hypσ, hypλ)
+    _compute_inv_Gram!(intset, hypλ)
     return intset
 end
 
@@ -192,6 +202,7 @@ function TrainingSet( _train_cVs, _cheby_coefficients, _interpset )
     new_type = promote_type( map( x -> eltype(x), (_train_cVs, _cheby_coefficients, _interpset) )... )
     return TrainingSet{new_type}( new_type.(_train_cVs),
                                   new_type.(_cheby_coefficients),
+                                  zeros(new_type, num_ensembles(_interpset), size(_train_cVs)[2]),
                                   zeros(new_type, num_ensembles(_interpset), size(_train_cVs)[2]),
                                   zeros(new_type, num_ensembles(_interpset), size(_train_cVs)[2]),
                                   zeros(new_type, size(_cheby_coefficients)...)
