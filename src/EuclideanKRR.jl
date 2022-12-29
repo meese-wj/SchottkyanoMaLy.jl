@@ -2,7 +2,7 @@ import Base: eltype
 using LinearAlgebra
 
 export regularized_inverse, minimizing_component, minimizing_solution, 
-       eltype, specific_heats, num_ensembles, num_temperatures, update!,
+       eltype, specific_heats, num_ensembles, num_temperatures, num_cheby_components, update!,
        InterpolationSet, cheby_components, msqdiff_Gram, gausskernel_Gram, deriv_Gram, inv_Gram,
        TrainingSet, predicted_components, msqdiff_TvI, gausskernel_TvI, gausskernel_deriv_TvI
 
@@ -66,11 +66,12 @@ abstract type MLMatrixContainer end
 specific_heats(_set::MLMatrixContainer) = _set.specific_heats
 specific_heats(_set::MLMatrixContainer, ensemble_idx) = view( specific_heats(_set), :, ensemble_idx )
 cheby_components(_set::MLMatrixContainer) = _set.cheby_components
-cheby_components(_set::MLMatrixContainer, order) = view( cheby_components(_set), :, order )
 Base.eltype(_set::MLMatrixContainer) = Base.eltype(specific_heats(_set))
 num_ensembles(_set::MLMatrixContainer) = size(specific_heats(_set))[2]
 num_temperatures(_set::MLMatrixContainer) = size(specific_heats(_set))[1]
 
+cheby_components(_set::MLMatrixContainer, order) = throw(MethodError(cheby_components, (_set, order)))
+num_cheby_components(_set::MLMatrixContainer) = throw(MethodError(num_cheby_components, (_set,)))
 update!(_set::MLMatrixContainer, args...) = throw(MethodError(update!, (_set, args...))) 
 
 """
@@ -125,6 +126,9 @@ function InterpolationSet( _all_cVs, _cheby_components, _msqdiff_Gram )
                                        zeros(new_type, size(_msqdiff_Gram)...)
                                     )
 end
+
+cheby_components(intset::InterpolationSet, order) = view(cheby_components(intset), :, order)
+num_cheby_components(intset::InterpolationSet) = size(cheby_components(intset))[2]
 
 msqdiff_Gram(intset::InterpolationSet) = intset.msqdiff_Gram
 gausskernel_Gram(intset::InterpolationSet) = intset.gausskernel_Gram
@@ -198,7 +202,7 @@ end
 function TrainingSet( _train_cVs, _cheby_coefficients, _interpset )
     @assert size(_train_cVs)[1] == num_temperatures(_interpset) "Size mismatch. The number of rows of the specific heats should match those in the InterpolationSet. Got $( size(_train_cVs)[1] ) and $( size(specific_heats(_interpset))[1] )."
     @assert size(_train_cVs)[2] == size(_cheby_coefficients)[2] "Size mismatch. The number of columns of the specific heats should match those of the Chebyshev components. Got $( size(_train_cVs)[2] ) and $( size(_cheby_coefficients)[2] )."
-    @assert size(_cheby_coefficients)[1] == size(cheby_components(_interpset))[2] "Size mismatch. The number of rows of the Chebyshev components should match the *columns*  of those in the InterpolationSet. Got $( size(_cheby_coefficients)[1] ) and $( size(cheby_components(_interpset))[2] )."
+    @assert size(_cheby_coefficients)[1] == num_cheby_components(_interpset) "Size mismatch. The number of rows of the Chebyshev components should match the *columns*  of those in the InterpolationSet. Got $( size(_cheby_coefficients)[1] ) and $( size(cheby_components(_interpset))[2] )."
     new_type = promote_type( map( x -> eltype(x), (_train_cVs, _cheby_coefficients, _interpset) )... )
     return TrainingSet{new_type}( new_type.(_train_cVs),
                                   new_type.(_cheby_coefficients),
@@ -219,6 +223,9 @@ function TrainingSet(_temperatures, _train_cVs, _cheby_coefficients, _interpset;
     end
     return trainset
 end
+
+cheby_components(trainset::TrainingSet, order) = view(cheby_components(trainset), order, :)
+num_cheby_components(intset::TrainingSet) = size(cheby_components(intset))[1]
 
 predicted_components(trainset::TrainingSet) = trainset.predicted_components
 predicted_components(trainset::TrainingSet, ensemble_idx) = view( predicted_components(trainset), :, ensemble_idx )

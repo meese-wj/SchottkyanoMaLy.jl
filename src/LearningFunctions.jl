@@ -1,7 +1,7 @@
 
 using LinearAlgebra
 
-export single_component_loss, single_component_loss_gradient
+export single_component_loss, single_component_loss_gradient, mean_component_loss_gradient, total_loss_gradient
 
 single_component_deviation(prediction, value) = @fastmath @. prediction - value
 single_component_loss(prediction, value) = @fastmath @. 0.5 * single_component_deviation(prediction, value)^2
@@ -68,8 +68,34 @@ function single_component_loss_gradient( component_idx, ensemble_idx, updated_tr
     pred = predicted_components(updated_trainset)[component_idx, ensemble_idx]
     val  = cheby_components(updated_trainset)[component_idx, ensemble_idx]
     return single_component_loss_gradient(pred, val, 
-                                          gausskernel_TvI(trainset, ensemble_idx), gausskernel_deriv_TvI(trainset, ensemble_idx),
+                                          gausskernel_TvI(updated_trainset, ensemble_idx), gausskernel_deriv_TvI(updated_trainset, ensemble_idx),
                                           deriv_Gram(updated_interpset), inv_Gram(updated_interpset), cheby_components(updated_interpset, component_idx) )
+end
+
+function mean_component_loss_gradient( component_idx, updated_trainset, updated_interpset )
+    num_ens = num_ensembles(updated_trainset)
+    out_type = Base.eltype(updated_trainset)
+    output_σ::out_type = zero(out_type)
+    output_λ::out_type = zero(out_type)
+    @inbounds for ens_idx ∈ UnitRange(1, num_ens)
+        output = single_component_loss_gradient(component_idx, ens_idx, updated_trainset, updated_interpset)
+        output_σ += output[1]
+        output_λ += output[2]
+    end
+    return (output_σ, output_λ) ./ num_ens
+end
+
+function total_loss_gradient( updated_trainset, updated_interpset )
+    num_comps = num_cheby_components(updated_trainset)
+    out_type = Base.eltype(updated_trainset)
+    output_σ::out_type = zero(out_type)
+    output_λ::out_type = zero(out_type)
+    for comp_idx ∈ UnitRange(1, num_comps)
+        output = mean_component_loss_gradient(comp_idx, updated_trainset, updated_interpset)
+        output_σ += output[1]
+        output_λ += output[2]
+    end
+    return (output_σ, output_λ)
 end
 
 function total_loss( predictions, values )
