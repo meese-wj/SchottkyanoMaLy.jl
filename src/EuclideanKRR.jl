@@ -7,7 +7,7 @@ export regularized_inverse, minimizing_component, minimizing_solution,
        TrainingSet, predicted_components, msqdiff_TvI, gausskernel_TvI, gausskernel_deriv_TvI,
        GaussianKRRML, hyperparameters, σvalue, λvalue, interpolationset, trainingset, ∇GaussianKRRML
 
-regularized_inverse(kernel_matrix, hypλ) = inv(kernel_matrix + hypλ * one(kernel_matrix))
+regularized_inverse(kernel_matrix, hypλ) = inv(kernel_matrix + (hypλ * LinearAlgebra.I))
 
 kernel_matrix_transformation(kernel_vector, inv_kernel_matrix) = transpose(kernel_vector) * inv_kernel_matrix
 
