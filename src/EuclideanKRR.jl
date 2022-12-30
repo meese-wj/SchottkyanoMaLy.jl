@@ -327,12 +327,13 @@ trainingset(gkkr::GaussianKRRML) = gkkr.trainset
 _update_hyperparameters!( gkkr::GaussianKRRML{T}, σ, λ) where T = gkkr.hyp_σλ = T.((σ, λ)) 
 
 """
-    update!(gkkr, [hypervals = (σ, λ)])
+    update!(gkkr::GaussianKRRML, [hypervals = (σ, λ)])
+    update!(gkkr::GaussianKRRML, σ, λ) = update!(gkkr, (σ, λ))
 
 Update the [`GaussianKRRML`](@ref) functor with the `Tuple` of `hypervals`. If no 
 parameters are supplied, this function will default to [`hyperparameters`](@ref)`(gkkr)`
 which amounts to a (re)calculation of the dynamic matrices in the [`InterpolationSet`](@ref)
-and [`TrainingSet`](@ref).
+and [`TrainingSet`](@ref). 
 
 The updates are performed in the following sequence (the order is *crucial*, thus the need for 
 the functor):
@@ -340,6 +341,10 @@ the functor):
 1. Set the values of `gkkr.hyp_σλ` (read-only access: `hyperparameters(gkkr)`).
 1. [`update!`](@ref) the [`InterpolationSet`](@ref) (accessed by `interpolationset(gkkr)`).
 1. [`update!`](@ref) the [`TrainingSet`](@ref) (accessed by `trainingset(gkkr)`).
+
+!!! note 
+    The second method is for convenience in not constructing a `Tuple` 
+    when testing hyperparameter values individually.
 """
 function update!(gkkr::GaussianKRRML, hypervals = hyperparameters(gkkr))
     _update_hyperparameters!(gkkr, hypervals...)
@@ -347,4 +352,4 @@ function update!(gkkr::GaussianKRRML, hypervals = hyperparameters(gkkr))
     update!( trainingset(gkkr), interpolationset(gkkr), σvalue(gkkr) )
     return gkkr
 end
-
+update!(gkkr::GaussianKRRML, σ, λ) = update!(gkkr, (σ, λ))
