@@ -353,3 +353,19 @@ function update!(gkkr::GaussianKRRML, hypervals = hyperparameters(gkkr))
     return gkkr
 end
 update!(gkkr::GaussianKRRML, σ, λ) = update!(gkkr, (σ, λ))
+
+"""
+    (gkkr::GaussianKRRML)([update_first = false])
+
+The [`GaussianKRRML`](@ref) functor. It computes the [`total_loss`](@ref)
+of the Gaussian Kernel Ridge Regression problem for its stored values 
+of the Chebyshev coefficients in its [`TrainingSet`](@ref), given its 
+stored `hyperparameters`. If `update_first = true` then a call to [`update!`](@ref)
+will be performed to update the `predicted_components`.
+"""
+function (gkkr::GaussianKRRML)(update_first = false)
+    update_first ? update!(gkkr) : nothing
+    all_predictions = (predicted_components ∘ trainingset)(gkkr)
+    all_values = (cheby_components ∘ trainingset)(gkkr)
+    return total_loss(all_predictions, all_values)
+end

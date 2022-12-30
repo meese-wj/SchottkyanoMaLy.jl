@@ -56,7 +56,7 @@ and
 
 The `Vector` ``\sigma^{-3}(d^2 \boldsymbol{\nu})`` is the element-wise derivative of ``\boldsymbol{\nu}`` and the matrix ``Q(\sigma, \lambda)`` is that for ``K(\sigma, \lambda)``.
 """
-function single_component_loss_gradient( prediction, value, νvector, ∂σνvector, Qmat, Minv, fcomp_vector )
+function single_component_loss_gradient( prediction::AbstractFloat, value::AbstractFloat, νvector, ∂σνvector, Qmat, Minv, fcomp_vector )
     Minv_f_vector = Minv * fcomp_vector # column vector
     νT_Minv = transpose(νvector) * Minv # row vector
     ∂σval  = dot( ∂σνvector, Minv_f_vector) # column ⋅ column
@@ -64,7 +64,7 @@ function single_component_loss_gradient( prediction, value, νvector, ∂σνvec
     ∂λval = dot( νvector, Minv, Minv_f_vector ) # colum ⋅ colum
     return single_component_deviation(prediction, value) .* ( ∂σval, ∂λval ) # return a Tuple as the gradient ∇ = (∂σ, ∂λ)
 end
-function single_component_loss_gradient( component_idx, ensemble_idx, updated_trainset::TrainingSet, updated_interpset::InterpolationSet )
+function single_component_loss_gradient( component_idx::Int, ensemble_idx::Int, updated_trainset, updated_interpset )
     pred = predicted_components(updated_trainset)[component_idx, ensemble_idx]
     val  = cheby_components(updated_trainset)[component_idx, ensemble_idx]
     return single_component_loss_gradient(pred, val, 
