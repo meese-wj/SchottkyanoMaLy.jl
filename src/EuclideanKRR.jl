@@ -309,11 +309,13 @@ mutable struct GaussianKRRML{T <: Number}
     trainset::TrainingSet{T}
 end
 
-function GaussianKRRML(temperatures, interp_cVs, interp_cheby_components, interp_msqdiff_Gram, train_cVs, train_cheby_components; σ0 = 0.5, λ0 = 0.1, kwargs...)
+function GaussianKRRML(temperatures, interp_cVs, interp_cheby_components, interp_msqdiff_Gram, train_cVs, train_cheby_components; σ0 = 0.5, λ0 = 0.1, initialize = true, kwargs...)
     interpset = InterpolationSet(interp_cVs, interp_cheby_components, interp_msqdiff_Gram)
     trainset = TrainingSet(train_cVs, train_cheby_components, interpset; kwargs...)
     T = eltype(interpset)
-    return GaussianKRRML{T}( T.( (σ0, λ0) ), interpset, trainset )
+    output = GaussianKRRML{T}( T.( (σ0, λ0) ), interpset, trainset )
+    initialize ? update!(output) : nothing
+    return output
 end
 
 hyperparameters(gkkr::GaussianKRRML) = gkkr.hyp_σλ
@@ -343,4 +345,6 @@ function update!(gkkr::GaussianKRRML, hypervals = hyperparameters(gkkr))
     _update_hyperparameters!(gkkr, hypervals...)
     update!( interpolationset(gkkr), hyperparameters(gkkr)... )
     update!( trainingset(gkkr), interpolationset(gkkr), σvalue(gkkr) )
+    return gkkr
 end
+
