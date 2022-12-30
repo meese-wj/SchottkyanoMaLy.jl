@@ -5,7 +5,7 @@ export regularized_inverse, minimizing_component, minimizing_solution,
        eltype, specific_heats, num_ensembles, num_temperatures, num_cheby_components, update!,
        InterpolationSet, cheby_components, msqdiff_Gram, gausskernel_Gram, deriv_Gram, inv_Gram,
        TrainingSet, predicted_components, msqdiff_TvI, gausskernel_TvI, gausskernel_deriv_TvI,
-       GaussianKRRML, hyperparameters, σvalue, λvalue, interpolationset, trainingset
+       GaussianKRRML, hyperparameters, σvalue, λvalue, interpolationset, trainingset, ∇GaussianKRRML
 
 regularized_inverse(kernel_matrix, hypλ) = inv(kernel_matrix + hypλ * one(kernel_matrix))
 
@@ -368,5 +368,55 @@ function (gkkr::GaussianKRRML)(update_first = false)
     all_predictions = (predicted_components ∘ trainingset)(gkkr)
     all_values = (cheby_components ∘ trainingset)(gkkr)
     return total_loss(all_predictions, all_values)
+end
+
+"""
+    ∇GaussianKRRML{T <: Number}
+
+A functor to calculate the ``∇ = (∂_σ, ∂_λ)`` gradient of the 
+[`GaussianKRRML`](@ref) functor. 
+
+This functor is just a wrapper around a `Ref`erence to the 
+[`GaussianKRRML`](@ref), which can then be [`update!`](@ref)-ed
+independently of this object without missing a beat.
+"""
+struct ∇GaussianKRRML{T <: Number}
+    gkkr::Ref{GaussianKRRML{T}}
+end
+
+"""
+    ∇GaussianKRRML(::GaussianKRRML{T})
+
+Create a [`∇GaussianKRRML`](@ref) functor referencing the given 
+[`GaussianKRRML`](@ref) of type `T`.
+"""
+∇GaussianKRRML( gkkr::GaussianKRRML{T} ) where T = ∇GaussianKRRML{T}( Ref(gkkr) )
+
+"""
+    get_GaussianKRRML(::∇GaussianKRRML)
+
+Dereference the [`GaussianKRRML`](@ref) functor monitored by the
+given [`∇GaussianKRRML`](@ref) one.
+"""
+get_GaussianKRRML(∇gkkr::∇GaussianKRRML) = ∇gkkr.gkkr[]
+
+"""
+    (::∇GaussianKRRML)([update_first = false])
+
+The actual functor associated with [`∇GaussianKRRML`](@ref) types. 
+This functor will calculate the [`total_loss_gradient`](@ref) of the 
+monitored [`GaussianKRRML`](@ref) functor, returning a `Tuple` as the 
+gradient. 
+
+!!! note
+    If `update_first = true`, this will [`update!`](@ref) the 
+    [`GaussianKRRML`](@ref) being monitored. However, unless this 
+    is modified to take in new hyperparameters, this will not change 
+    the state of the [`GaussianKRRML`](@ref).
+"""
+function (∇gkkr::∇GaussianKRRML{T})(update_first = false) where T
+    gkkr = get_GaussianKRRML(∇gkkr)
+    update_first ? update!(gkkr) : nothing
+    return total_loss_gradient(trainingset(gkkr), interpolationset(gkkr))::Tuple{T, T}
 end
 
