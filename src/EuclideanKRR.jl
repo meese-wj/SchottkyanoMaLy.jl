@@ -149,7 +149,7 @@ function _compute_deriv_Gram!(intset, hypσ)
     return deriv_Gram(intset)
 end
 function _compute_inv_Gram!(intset, hypλ) 
-    Mmat = gausskernel_Gram(intset) + ( hypλ * LinearAlgebra.I )( num_ensembles(intset) )
+    Mmat = gausskernel_Gram(intset) + ( hypλ * LinearAlgebra.I )
     inv_Gram(intset) .= inv(Mmat)
 end
 
