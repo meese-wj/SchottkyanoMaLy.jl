@@ -369,3 +369,4 @@ function (gkkr::GaussianKRRML)(update_first = false)
     all_values = (cheby_components ∘ trainingset)(gkkr)
     return total_loss(all_predictions, all_values)
 end
+

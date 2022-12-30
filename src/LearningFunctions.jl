@@ -1,5 +1,6 @@
 
 using LinearAlgebra
+using Statistics
 
 export single_component_loss, single_component_loss_gradient, mean_component_loss_gradient, total_loss_gradient
 
@@ -99,5 +100,5 @@ function total_loss_gradient( updated_trainset, updated_interpset )
 end
 
 function total_loss( predictions, values )
-    return sum( single_component_loss(predictions, values) )
+    return sum( tup -> (mean ∘ single_component_loss)(tup...), zip( eachcol.( (predictions, values) )... ) )
 end
