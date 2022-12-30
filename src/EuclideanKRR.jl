@@ -355,20 +355,26 @@ end
 update!(gkkr::GaussianKRRML, σ, λ) = update!(gkkr, (σ, λ))
 
 """
-    (gkkr::GaussianKRRML)([update_first = false])
+    (gkkr::GaussianKRRML)([update_first = false]) # method 1
+    (gkkr::GaussianKRRML)(hyp_σλ)                 # method 2
 
 The [`GaussianKRRML`](@ref) functor. It computes the [`total_loss`](@ref)
 of the Gaussian Kernel Ridge Regression problem for its stored values 
 of the Chebyshev coefficients in its [`TrainingSet`](@ref), given its 
-stored `hyperparameters`. If `update_first = true` then a call to [`update!`](@ref)
-will be performed to update the `predicted_components`.
+stored `hyperparameters`. 
+
+# Methods
+
+1. If `update_first = true` then a call to [`update!`](@ref) will be performed to update the `predicted_components`.
+1. `hyp_σλ` is an iterable of hyperparameters `σ` and `λ`. This will [`update!`](@ref) `gkkr` first and then compute the functor.
 """
-function (gkkr::GaussianKRRML)(update_first = false)
+function (gkkr::GaussianKRRML)(update_first::Bool = false)
     update_first ? update!(gkkr) : nothing
     all_predictions = (predicted_components ∘ trainingset)(gkkr)
     all_values = (cheby_components ∘ trainingset)(gkkr)
     return total_loss(all_predictions, all_values)
 end
+(gkkr::GaussianKRRML)(hyp_σλ)= ( update!(gkkr, hyp_σλ[begin], hyp_σλ[end]); gkkr(false) )
 
 """
     ∇GaussianKRRML{T <: Number}
@@ -407,16 +413,9 @@ The actual functor associated with [`∇GaussianKRRML`](@ref) types.
 This functor will calculate the [`total_loss_gradient`](@ref) of the 
 monitored [`GaussianKRRML`](@ref) functor, returning a `Tuple` as the 
 gradient. 
-
-!!! note
-    If `update_first = true`, this will [`update!`](@ref) the 
-    [`GaussianKRRML`](@ref) being monitored. However, unless this 
-    is modified to take in new hyperparameters, this will not change 
-    the state of the [`GaussianKRRML`](@ref).
 """
-function (∇gkkr::∇GaussianKRRML{T})(update_first = false) where T
+function (∇gkkr::∇GaussianKRRML{T})(hyp_σλ) where T
     gkkr = get_GaussianKRRML(∇gkkr)
-    update_first ? update!(gkkr) : nothing
     return total_loss_gradient(trainingset(gkkr), interpolationset(gkkr))::Tuple{T, T}
 end
-
+(∇gkkr::∇GaussianKRRML)(storage, hyp_σλ) = (grad = ∇gkkr(hyp_σλ); storage[begin] = grad[begin]; storage[end] = grad[end])
