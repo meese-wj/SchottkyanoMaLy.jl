@@ -153,6 +153,17 @@ function _compute_inv_Gram!(intset, hypλ)
     inv_Gram(intset) .= inv(Mmat)
 end
 
+"""
+    update!(intset::InterpolationSet, hypσ, hypλ)
+
+Update the [`InterpolationSet`](@ref)'s dynamic matrices with a new `hypσ` and `hypλ` hyperparameters.
+
+The order of the updates is *crucial*. They follow as 
+
+1. Compute the `gausskernel_Gram(intset)` with the new `hypσ`.
+1. Compute the `deriv_Gram(intset)` with the new `hypσ`.
+1. From these matrices, compute the `inv_Gram(intset)` with the new `hypλ`.
+"""
 function update!(intset::InterpolationSet, hypσ, hypλ)
     _compute_gausskernel_Gram!(intset, hypσ)
     _compute_deriv_Gram!(intset, hypσ)
@@ -264,6 +275,19 @@ function _compute_predicted_components!(trainset::TrainingSet, updated_interpset
     return predicted_components(trainset)
 end
 
+"""
+    update!(trainset::TrainingSet, updated_interpset::InterpolationSet, hypσ)
+
+Update the [`TrainingSet`](@ref)'s dynamic matrices with a new `hypσ` hyperparameter.
+Some matrices depend on the [`InterpolationSet`](@ref), explicitly, and so it requires
+an *already updated* [`InterpolationSet`](@ref).
+
+The order of the updates is *crucial*. They follow as 
+
+1. Compute the `gausskernel_TvI(trainset)` with the new `hypσ`.
+1. Compute the `gausskernel_deriv_TvI(trainset)` with the new `hypσ`.
+1. From these sets and a given [`InterpolationSet`](@ref), compute the `predicted_components(trainset)`.
+"""
 function update!(trainset::TrainingSet, updated_intset::InterpolationSet, hypσ)
     _compute_gausskernel_TvI!(trainset, hypσ)
     _compute_deriv_TvI!(trainset, hypσ)
@@ -279,7 +303,7 @@ process. It contains a `Tuple` of `(σ, λ)` hyperparameters as well as the
 [`InterpolationSet`](@ref) and the [`TrainingSet`](@ref). It is to be [`update!`](@ref)-ed
 after every learning epoch.
 """
-struct GaussianKRRML{T <: Number}
+mutable struct GaussianKRRML{T <: Number}
     hyp_σλ::Tuple{T, T}
     interpset::InterpolationSet{T}
     trainset::TrainingSet{T}
@@ -289,7 +313,7 @@ function GaussianKRRML(temperatures, interp_cVs, interp_cheby_components, interp
     interpset = InterpolationSet(interp_cVs, interp_cheby_components, interp_msqdiff_Gram)
     trainset = TrainingSet(train_cVs, train_cheby_components, interpset; kwargs...)
     T = eltype(interpset)
-    return GaussianKRRML{T}( T.(σ0, λ0), interpset, trainset )
+    return GaussianKRRML{T}( T.( (σ0, λ0) ), interpset, trainset )
 end
 
 hyperparameters(gkkr::GaussianKRRML) = gkkr.hyp_σλ
@@ -298,10 +322,25 @@ hyperparameters(gkkr::GaussianKRRML) = gkkr.hyp_σλ
 interpolationset(gkkr::GaussianKRRML) = gkkr.interpset
 trainingset(gkkr::GaussianKRRML) = gkkr.trainset
 
-_update_hyperparameters!( gkkr::GaussianKRRML{T}, σ, λ) where T = gkkr.hyp_σλ = T.(σ, λ) 
+_update_hyperparameters!( gkkr::GaussianKRRML{T}, σ, λ) where T = gkkr.hyp_σλ = T.((σ, λ)) 
 
-function update!(gkkr::GaussianKRRML, σ, λ)
-    _update_hyperparameters!(gkkr, σ, λ)
+"""
+    update!(gkkr, [hypervals = (σ, λ)])
+
+Update the [`GaussianKRRML`](@ref) functor with the `Tuple` of `hypervals`. If no 
+parameters are supplied, this function will default to [`hyperparameters`](@ref)`(gkkr)`
+which amounts to a (re)calculation of the dynamic matrices in the [`InterpolationSet`](@ref)
+and [`TrainingSet`](@ref).
+
+The updates are performed in the following sequence (the order is *crucial*, thus the need for 
+the functor):
+
+1. Set the values of `gkkr.hyp_σλ` (read-only access: `hyperparameters(gkkr)`).
+1. [`update!`](@ref) the [`InterpolationSet`](@ref) (accessed by `interpolationset(gkkr)`).
+1. [`update!`](@ref) the [`TrainingSet`](@ref) (accessed by `trainingset(gkkr)`).
+"""
+function update!(gkkr::GaussianKRRML, hypervals = hyperparameters(gkkr))
+    _update_hyperparameters!(gkkr, hypervals...)
     update!( interpolationset(gkkr), hyperparameters(gkkr)... )
     update!( trainingset(gkkr), interpolationset(gkkr), σvalue(gkkr) )
 end
