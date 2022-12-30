@@ -4,7 +4,8 @@ using LinearAlgebra
 export regularized_inverse, minimizing_component, minimizing_solution, 
        eltype, specific_heats, num_ensembles, num_temperatures, num_cheby_components, update!,
        InterpolationSet, cheby_components, msqdiff_Gram, gausskernel_Gram, deriv_Gram, inv_Gram,
-       TrainingSet, predicted_components, msqdiff_TvI, gausskernel_TvI, gausskernel_deriv_TvI
+       TrainingSet, predicted_components, msqdiff_TvI, gausskernel_TvI, gausskernel_deriv_TvI,
+       GaussianKRRML, hyperparameters, σvalue, λvalue, interpolationset, trainingset
 
 regularized_inverse(kernel_matrix, hypλ) = inv(kernel_matrix + hypλ * one(kernel_matrix))
 
@@ -268,4 +269,39 @@ function update!(trainset::TrainingSet, updated_intset::InterpolationSet, hypσ)
     _compute_deriv_TvI!(trainset, hypσ)
     _compute_predicted_components!(trainset, updated_intset) 
     return trainset
+end
+
+"""
+    GaussianKRRML{T <: Number}
+
+Create a functor container around the Kernel Ridge Regression machine learning 
+process. It contains a `Tuple` of `(σ, λ)` hyperparameters as well as the 
+[`InterpolationSet`](@ref) and the [`TrainingSet`](@ref). It is to be [`update!`](@ref)-ed
+after every learning epoch.
+"""
+struct GaussianKRRML{T <: Number}
+    hyp_σλ::Tuple{T, T}
+    interpset::InterpolationSet{T}
+    trainset::TrainingSet{T}
+end
+
+function GaussianKRRML(temperatures, interp_cVs, interp_cheby_components, interp_msqdiff_Gram, train_cVs, train_cheby_components; σ0 = 0.5, λ0 = 0.1, kwargs...)
+    interpset = InterpolationSet(interp_cVs, interp_cheby_components, interp_msqdiff_Gram)
+    trainset = TrainingSet(train_cVs, train_cheby_components, interpset; kwargs...)
+    T = eltype(interpset)
+    return GaussianKRRML{T}( T.(σ0, λ0), interpset, trainset )
+end
+
+hyperparameters(gkkr::GaussianKRRML) = gkkr.hyp_σλ
+σvalue( gkkr::GaussianKRRML ) = hyperparameters(gkkr)[begin]
+λvalue( gkkr::GaussianKRRML ) = hyperparameters(gkkr)[end]
+interpolationset(gkkr::GaussianKRRML) = gkkr.interpset
+trainingset(gkkr::GaussianKRRML) = gkkr.trainset
+
+_update_hyperparameters!( gkkr::GaussianKRRML{T}, σ, λ) where T = gkkr.hyp_σλ = T.(σ, λ) 
+
+function update!(gkkr::GaussianKRRML, σ, λ)
+    _update_hyperparameters!(gkkr, σ, λ)
+    update!( interpolationset(gkkr), hyperparameters(gkkr)... )
+    update!( trainingset(gkkr), interpolationset(gkkr), σvalue(gkkr) )
 end
