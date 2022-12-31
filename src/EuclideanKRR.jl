@@ -422,3 +422,4 @@ function (∇gkkr::∇GaussianKRRML{T})(hyp_σλ) where T
     return total_loss_gradient(trainingset(gkkr), interpolationset(gkkr))::Tuple{T, T}
 end
 (∇gkkr::∇GaussianKRRML)(storage, hyp_σλ) = (grad = ∇gkkr(hyp_σλ); storage[begin] = grad[begin]; storage[end] = grad[end])
+(∇gkkr::∇GaussianKRRML)() = ∇gkkr(∇gkkr |> get_GaussianKRRML |> hyperparameters)
