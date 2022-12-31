@@ -216,6 +216,7 @@ function TrainingSet( _train_cVs, _cheby_coefficients, _interpset )
     @assert size(_train_cVs)[2] == size(_cheby_coefficients)[2] "Size mismatch. The number of columns of the specific heats should match those of the Chebyshev components. Got $( size(_train_cVs)[2] ) and $( size(_cheby_coefficients)[2] )."
     @assert size(_cheby_coefficients)[1] == num_cheby_components(_interpset) "Size mismatch. The number of rows of the Chebyshev components should match the *columns*  of those in the InterpolationSet. Got $( size(_cheby_coefficients)[1] ) and $( size(cheby_components(_interpset))[2] )."
     new_type = promote_type( map( x -> eltype(x), (_train_cVs, _cheby_coefficients, _interpset) )... )
+    @show "here"
     return TrainingSet{new_type}( new_type.(_train_cVs),
                                   new_type.(_cheby_coefficients),
                                   zeros(new_type, num_ensembles(_interpset), size(_train_cVs)[2]),
@@ -231,7 +232,9 @@ function TrainingSet(_temperatures, _train_cVs, _cheby_coefficients, _interpset;
     # Now populate the msqdiff_TvI matrix
     @inbounds Threads.@threads for train_cidx ∈ eachindex(eachcol(msqdiff_TvI(trainset)))
         train_column = view( msqdiff_TvI(trainset), :, train_cidx )
+        @show train_column
         input_reference_msqdiffs!( train_column, specific_heats(trainset, train_cidx), specific_heats(_interpset), _temperatures; kwargs... )
+        @show train_column
     end
     return trainset
 end
@@ -311,7 +314,7 @@ end
 
 function GaussianKRRML(temperatures, interp_cVs, interp_cheby_components, interp_msqdiff_Gram, train_cVs, train_cheby_components; σ0 = 0.5, λ0 = 0.1, initialize = true, kwargs...)
     interpset = InterpolationSet(interp_cVs, interp_cheby_components, interp_msqdiff_Gram)
-    trainset = TrainingSet(train_cVs, train_cheby_components, interpset; kwargs...)
+    trainset = TrainingSet(temperatures, train_cVs, train_cheby_components, interpset; kwargs...)
     T = eltype(interpset)
     output = GaussianKRRML{T}( T.( (σ0, λ0) ), interpset, trainset )
     initialize ? update!(output) : nothing
