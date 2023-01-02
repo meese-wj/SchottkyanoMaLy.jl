@@ -105,11 +105,11 @@ Various interfaces to a [`DonutVolcanoEnsemble`](@ref)
 * `DonutVolcanoEnsemble(::Vector{Tuple{T, T}})`
     * Create an ensemble from a `Vector` of `(μ, σ)` `Tuple`s of the same `Type`.
 
-* `DonutVolcanoEnsemble(::Vector{Tuple{T, U}})`
+* `DonutVolcanoEnsemble(::AbstractVector{Tuple})`
     * Create an ensemble from a `Vector` of `(μ, σ)` `Tuple`s of the different `Type`s. 
     * The type of the ensemble is chosen by `Base.promote_type`.
 
-* `DonutVolcanoEnsemble(::Type{S}, ::Vector{Tuple{T, U}})`
+* `DonutVolcanoEnsemble(::Type{S}, ::AbstractVector{Tuple})`
     * Create an ensemble from a `Vector` of `(μ, σ)` `Tuple`s of the different `Type`s into an ensemble of with preferred type `S`.
     * The ultimate type of the ensemble is chosen by `Base.promote_type`.
 
@@ -125,12 +125,15 @@ Various interfaces to a [`DonutVolcanoEnsemble`](@ref)
     * Create an empty ensemble. By default the type is `Float64`.
 """
 DonutVolcanoEnsemble( tups::Vector{Tuple{T, T}} ) where T = DonutVolcanoEnsemble{T}( tups )	
-function DonutVolcanoEnsemble(tups::Vector{Tuple{T, U}}) where {T, U}
-	t = promote_type(T, U)
+function DonutVolcanoEnsemble(tups::AbstractVector)
+    t::Type = promote_type( typeof.(tups[begin])...  )
+    for tup ∈ tups
+        t = promote_type(t, typeof.(tup)...)
+    end
 	new_tups = map( tup -> convert.(t, tup), tups )
 	return DonutVolcanoEnsemble(new_tups)
 end
-function DonutVolcanoEnsemble(::Type{S}, tups::Vector{Tuple{T, U}}) where {S, T, U}
+function DonutVolcanoEnsemble(::Type{S}, tups::AbstractVector) where {S}
 	dve = DonutVolcanoEnsemble(tups)
 	t = promote_type( eltype(dve), S )
 	return DonutVolcanoEnsemble( map( tup -> convert.(t, tup), ensemble(dve) ) )
