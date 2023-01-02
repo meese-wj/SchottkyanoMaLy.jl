@@ -5,7 +5,7 @@ export regularized_inverse, minimizing_component, minimizing_solution,
        eltype, specific_heats, num_ensembles, num_temperatures, num_cheby_components, update!,
        InterpolationSet, cheby_components, msqdiff_Gram, gausskernel_Gram, deriv_Gram, inv_Gram,
        TrainingSet, predicted_components, msqdiff_TvI, gausskernel_TvI, gausskernel_deriv_TvI,
-       GaussianKRRML, hyperparameters, σvalue, λvalue, interpolationset, trainingset, ∇GaussianKRRML
+       GaussianKRRML, maximum_loss_order, hyperparameters, σvalue, λvalue, interpolationset, trainingset, ∇GaussianKRRML
 
 regularized_inverse(kernel_matrix, hypλ) = inv(kernel_matrix + (hypλ * LinearAlgebra.I))
 
@@ -307,20 +307,25 @@ process. It contains a `Tuple` of `(σ, λ)` hyperparameters as well as the
 after every learning epoch.
 """
 mutable struct GaussianKRRML{T <: Number}
+    const max_loss_order::Int
     hyp_σλ::Tuple{T, T}
     interpset::InterpolationSet{T}
     trainset::TrainingSet{T}
 end
 
-function GaussianKRRML(temperatures, interp_cVs, interp_cheby_components, interp_msqdiff_Gram, train_cVs, train_cheby_components; σ0 = 0.5, λ0 = 0.1, initialize = true, kwargs...)
+function GaussianKRRML(temperatures, interp_cVs, interp_cheby_components, interp_msqdiff_Gram, train_cVs, train_cheby_components; 
+                       σ0 = 0.5, λ0 = 0.1, initialize = true, max_loss_order = nothing, kwargs...)
     interpset = InterpolationSet(interp_cVs, interp_cheby_components, interp_msqdiff_Gram)
     trainset = TrainingSet(temperatures, train_cVs, train_cheby_components, interpset; kwargs...)
     T = eltype(interpset)
-    output = GaussianKRRML{T}( T.( (σ0, λ0) ), interpset, trainset )
+    max_loss_order = max_loss_order === nothing ? num_cheby_components(interpset) - 1 : max_loss_order
+    @assert  0 ≤ max_loss_order ≤ num_cheby_components(interpset) - 1 "The maximum Chebyshev order to check is $(num_cheby_components(interpset) - 1). Got $(max_loss_order)."
+    output = GaussianKRRML{T}( max_loss_order, T.( (σ0, λ0) ), interpset, trainset )
     initialize ? update!(output) : nothing
     return output
 end
 
+maximum_loss_order(gkrr::GaussianKRRML) = gkrr.max_loss_order
 hyperparameters(gkrr::GaussianKRRML) = gkrr.hyp_σλ
 σvalue( gkrr::GaussianKRRML ) = hyperparameters(gkrr)[begin]
 λvalue( gkrr::GaussianKRRML ) = hyperparameters(gkrr)[end]
@@ -375,7 +380,7 @@ function (gkrr::GaussianKRRML)(update_first::Bool = false)
     update_first ? update!(gkrr) : nothing
     all_predictions = (predicted_components ∘ trainingset)(gkrr)
     all_values = (cheby_components ∘ trainingset)(gkrr)
-    return total_loss(all_predictions, all_values)
+    return total_loss(all_predictions, all_values, maximum_loss_order(gkrr))
 end
 (gkrr::GaussianKRRML)(hyp_σλ)= ( update!(gkrr, hyp_σλ[begin], hyp_σλ[end]); gkrr(false) )
 
@@ -419,7 +424,7 @@ gradient.
 """
 function (∇gkrr::∇GaussianKRRML{T})(hyp_σλ) where T
     gkrr = get_GaussianKRRML(∇gkrr)
-    return total_loss_gradient(trainingset(gkrr), interpolationset(gkrr))::Tuple{T, T}
+    return total_loss_gradient(trainingset(gkrr), interpolationset(gkrr), maximum_loss_order(gkrr))::Tuple{T, T}
 end
 (∇gkrr::∇GaussianKRRML)(storage, hyp_σλ) = (grad = ∇gkrr(hyp_σλ); storage[begin] = grad[begin]; storage[end] = grad[end])
 (∇gkrr::∇GaussianKRRML)() = ∇gkrr(∇gkrr |> get_GaussianKRRML |> hyperparameters)

@@ -86,8 +86,7 @@ function mean_component_loss_gradient( component_idx, updated_trainset, updated_
     return (output_σ, output_λ) ./ num_ens
 end
 
-function total_loss_gradient( updated_trainset, updated_interpset )
-    num_comps = num_cheby_components(updated_trainset)
+function total_loss_gradient( updated_trainset, updated_interpset, num_comps = num_cheby_components(updated_interpset) )
     out_type = Base.eltype(updated_trainset)
     output_σ::out_type = zero(out_type)
     output_λ::out_type = zero(out_type)
@@ -99,6 +98,9 @@ function total_loss_gradient( updated_trainset, updated_interpset )
     return (output_σ, output_λ)
 end
 
-function total_loss( predictions, values )
-    return sum( tup -> (mean ∘ single_component_loss)(tup...), zip( eachcol.( (predictions, values) )... ) )
+function total_loss( predictions, values, max_order::Union{Nothing, Int} = nothing )
+    max_order === nothing ? size(predictions)[1] : max_order
+    preds = @view predictions[1:(max_order + 1), :]
+    vals = @view values[1:(max_order + 1), :]
+    return sum( tup -> (mean ∘ single_component_loss)(tup...), zip( eachcol.( (preds, vals) )... ) )
 end
