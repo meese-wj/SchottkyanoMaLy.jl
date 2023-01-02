@@ -264,7 +264,7 @@ function (dve::DonutVolcanoEnsemble)(x)
 end
 
 @doc raw"""
-    specific_heat([::NLevelSystem = TwoLevelSystem()], T, ::DonutVolcanoEnsemble, [Δmin = 0, Δmax = Inf])
+    specific_heat([::NLevelSystem = TwoLevelSystem()], T, ::Union{DonutVolcanoEnsemble, FastChebInterp.ChebPoly}, [Δmin = 0, Δmax = Inf])
 
 Calculate the [`specific_heat`](@ref) ``\tilde{c}_V(T, \Delta`` integrated over the [`DonutVolcanoEnsemble`](@ref)
 for a fixed temperature ``T``. By default, this is calculated for a [`TwoLevelSystem`](@ref).
@@ -276,21 +276,26 @@ c_V(T) = \int_{\Delta_{\min}}^{\Delta_{\max}} \mathrm{d}\Delta\, \mathrm{p}(\Del
 ```
 
 where ``\mathrm{p}(\Delta)`` is calculated from the [`DonutVolcanoEnsemble`](@ref).
+
+!!! note
+    The `FastChebInterp.jl` `ChebPoly` type has bounds for the interpolation. If a Chebyshev 
+    interpolation is passed, one must specify (at least) `Δmax` or else the compiler will complain 
+    that the interpolation is outside the `ChebPoly` bounds.
 """
-function specific_heat(nls::NLevelSystem, Temp::Real, dve::DonutVolcanoEnsemble, Δmin = 0, Δmax = Inf; rtol = sqrt(eps()))
+function specific_heat(nls::NLevelSystem, Temp::Real, dve::Union{DonutVolcanoEnsemble, FastChebInterp.ChebPoly}, Δmin = 0, Δmax = Inf; rtol = sqrt(eps()))
     output = quadgk( Δmin, Δmax; rtol = rtol ) do Δ
         dve(Δ) * specific_heat(nls, Temp, Δ)
     end
     return output[begin]
 end
-function specific_heat(nls::NLevelSystem, Temps::AbstractArray, dve::DonutVolcanoEnsemble, Δmin = 0, Δmax = Inf; rtol = sqrt(eps()))
+function specific_heat(nls::NLevelSystem, Temps::AbstractArray, dve::Union{DonutVolcanoEnsemble, FastChebInterp.ChebPoly}, Δmin = 0, Δmax = Inf; rtol = sqrt(eps()))
     output = similar(Temps)
     for (Tdx, Temp) ∈ enumerate(Temps)
         output[Tdx] = specific_heat(nls, Temp, dve, Δmin, Δmax; rtol = rtol)
     end
     return output
 end
-specific_heat(T, dve::DonutVolcanoEnsemble, Δmin = 0, Δmax = Inf; rtol = sqrt(eps())) = specific_heat(TwoLevelSystem(), T, dve, Δmin, Δmax; rtol = rtol)
+specific_heat(T, dve::Union{DonutVolcanoEnsemble, FastChebInterp.ChebPoly}, Δmin = 0, Δmax = Inf; rtol = sqrt(eps())) = specific_heat(TwoLevelSystem(), T, dve, Δmin, Δmax; rtol = rtol)
 
 """
     RandomDonutVolcanoGenerator{T <: Real}
