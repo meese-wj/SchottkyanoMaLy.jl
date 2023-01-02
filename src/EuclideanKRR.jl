@@ -321,45 +321,45 @@ function GaussianKRRML(temperatures, interp_cVs, interp_cheby_components, interp
     return output
 end
 
-hyperparameters(gkkr::GaussianKRRML) = gkkr.hyp_σλ
-σvalue( gkkr::GaussianKRRML ) = hyperparameters(gkkr)[begin]
-λvalue( gkkr::GaussianKRRML ) = hyperparameters(gkkr)[end]
-interpolationset(gkkr::GaussianKRRML) = gkkr.interpset
-trainingset(gkkr::GaussianKRRML) = gkkr.trainset
+hyperparameters(gkrr::GaussianKRRML) = gkrr.hyp_σλ
+σvalue( gkrr::GaussianKRRML ) = hyperparameters(gkrr)[begin]
+λvalue( gkrr::GaussianKRRML ) = hyperparameters(gkrr)[end]
+interpolationset(gkrr::GaussianKRRML) = gkrr.interpset
+trainingset(gkrr::GaussianKRRML) = gkrr.trainset
 
-_update_hyperparameters!( gkkr::GaussianKRRML{T}, σ, λ) where T = gkkr.hyp_σλ = T.((σ, λ)) 
+_update_hyperparameters!( gkrr::GaussianKRRML{T}, σ, λ) where T = gkrr.hyp_σλ = T.((σ, λ)) 
 
 """
-    update!(gkkr::GaussianKRRML, [hypervals = (σ, λ)])
-    update!(gkkr::GaussianKRRML, σ, λ) = update!(gkkr, (σ, λ))
+    update!(gkrr::GaussianKRRML, [hypervals = (σ, λ)])
+    update!(gkrr::GaussianKRRML, σ, λ) = update!(gkrr, (σ, λ))
 
 Update the [`GaussianKRRML`](@ref) functor with the `Tuple` of `hypervals`. If no 
-parameters are supplied, this function will default to [`hyperparameters`](@ref)`(gkkr)`
+parameters are supplied, this function will default to [`hyperparameters`](@ref)`(gkrr)`
 which amounts to a (re)calculation of the dynamic matrices in the [`InterpolationSet`](@ref)
 and [`TrainingSet`](@ref). 
 
 The updates are performed in the following sequence (the order is *crucial*, thus the need for 
 the functor):
 
-1. Set the values of `gkkr.hyp_σλ` (read-only access: `hyperparameters(gkkr)`).
-1. [`update!`](@ref) the [`InterpolationSet`](@ref) (accessed by `interpolationset(gkkr)`).
-1. [`update!`](@ref) the [`TrainingSet`](@ref) (accessed by `trainingset(gkkr)`).
+1. Set the values of `gkrr.hyp_σλ` (read-only access: `hyperparameters(gkrr)`).
+1. [`update!`](@ref) the [`InterpolationSet`](@ref) (accessed by `interpolationset(gkrr)`).
+1. [`update!`](@ref) the [`TrainingSet`](@ref) (accessed by `trainingset(gkrr)`).
 
 !!! note 
     The second method is for convenience in not constructing a `Tuple` 
     when testing hyperparameter values individually.
 """
-function update!(gkkr::GaussianKRRML, hypervals = hyperparameters(gkkr))
-    _update_hyperparameters!(gkkr, hypervals...)
-    update!( interpolationset(gkkr), hyperparameters(gkkr)... )
-    update!( trainingset(gkkr), interpolationset(gkkr), σvalue(gkkr) )
-    return gkkr
+function update!(gkrr::GaussianKRRML, hypervals = hyperparameters(gkrr))
+    _update_hyperparameters!(gkrr, hypervals...)
+    update!( interpolationset(gkrr), hyperparameters(gkrr)... )
+    update!( trainingset(gkrr), interpolationset(gkrr), σvalue(gkrr) )
+    return gkrr
 end
-update!(gkkr::GaussianKRRML, σ, λ) = update!(gkkr, (σ, λ))
+update!(gkrr::GaussianKRRML, σ, λ) = update!(gkrr, (σ, λ))
 
 """
-    (gkkr::GaussianKRRML)([update_first = false]) # method 1
-    (gkkr::GaussianKRRML)(hyp_σλ)                 # method 2
+    (gkrr::GaussianKRRML)([update_first = false]) # method 1
+    (gkrr::GaussianKRRML)(hyp_σλ)                 # method 2
 
 The [`GaussianKRRML`](@ref) functor. It computes the [`total_loss`](@ref)
 of the Gaussian Kernel Ridge Regression problem for its stored values 
@@ -369,15 +369,15 @@ stored `hyperparameters`.
 # Methods
 
 1. If `update_first = true` then a call to [`update!`](@ref) will be performed to update the `predicted_components`.
-1. `hyp_σλ` is an iterable of hyperparameters `σ` and `λ`. This will [`update!`](@ref) `gkkr` first and then compute the functor.
+1. `hyp_σλ` is an iterable of hyperparameters `σ` and `λ`. This will [`update!`](@ref) `gkrr` first and then compute the functor.
 """
-function (gkkr::GaussianKRRML)(update_first::Bool = false)
-    update_first ? update!(gkkr) : nothing
-    all_predictions = (predicted_components ∘ trainingset)(gkkr)
-    all_values = (cheby_components ∘ trainingset)(gkkr)
+function (gkrr::GaussianKRRML)(update_first::Bool = false)
+    update_first ? update!(gkrr) : nothing
+    all_predictions = (predicted_components ∘ trainingset)(gkrr)
+    all_values = (cheby_components ∘ trainingset)(gkrr)
     return total_loss(all_predictions, all_values)
 end
-(gkkr::GaussianKRRML)(hyp_σλ)= ( update!(gkkr, hyp_σλ[begin], hyp_σλ[end]); gkkr(false) )
+(gkrr::GaussianKRRML)(hyp_σλ)= ( update!(gkrr, hyp_σλ[begin], hyp_σλ[end]); gkrr(false) )
 
 """
     ∇GaussianKRRML{T <: Number}
@@ -390,7 +390,7 @@ This functor is just a wrapper around a `Ref`erence to the
 independently of this object without missing a beat.
 """
 struct ∇GaussianKRRML{T <: Number}
-    gkkr::Ref{GaussianKRRML{T}}
+    gkrr::Ref{GaussianKRRML{T}}
 end
 
 """
@@ -399,7 +399,7 @@ end
 Create a [`∇GaussianKRRML`](@ref) functor referencing the given 
 [`GaussianKRRML`](@ref) of type `T`.
 """
-∇GaussianKRRML( gkkr::GaussianKRRML{T} ) where T = ∇GaussianKRRML{T}( Ref(gkkr) )
+∇GaussianKRRML( gkrr::GaussianKRRML{T} ) where T = ∇GaussianKRRML{T}( Ref(gkrr) )
 
 """
     get_GaussianKRRML(::∇GaussianKRRML)
@@ -407,7 +407,7 @@ Create a [`∇GaussianKRRML`](@ref) functor referencing the given
 Dereference the [`GaussianKRRML`](@ref) functor monitored by the
 given [`∇GaussianKRRML`](@ref) one.
 """
-get_GaussianKRRML(∇gkkr::∇GaussianKRRML) = ∇gkkr.gkkr[]
+get_GaussianKRRML(∇gkrr::∇GaussianKRRML) = ∇gkrr.gkrr[]
 
 """
     (::∇GaussianKRRML)([update_first = false])
@@ -417,9 +417,9 @@ This functor will calculate the [`total_loss_gradient`](@ref) of the
 monitored [`GaussianKRRML`](@ref) functor, returning a `Tuple` as the 
 gradient. 
 """
-function (∇gkkr::∇GaussianKRRML{T})(hyp_σλ) where T
-    gkkr = get_GaussianKRRML(∇gkkr)
-    return total_loss_gradient(trainingset(gkkr), interpolationset(gkkr))::Tuple{T, T}
+function (∇gkrr::∇GaussianKRRML{T})(hyp_σλ) where T
+    gkrr = get_GaussianKRRML(∇gkrr)
+    return total_loss_gradient(trainingset(gkrr), interpolationset(gkrr))::Tuple{T, T}
 end
-(∇gkkr::∇GaussianKRRML)(storage, hyp_σλ) = (grad = ∇gkkr(hyp_σλ); storage[begin] = grad[begin]; storage[end] = grad[end])
-(∇gkkr::∇GaussianKRRML)() = ∇gkkr(∇gkkr |> get_GaussianKRRML |> hyperparameters)
+(∇gkrr::∇GaussianKRRML)(storage, hyp_σλ) = (grad = ∇gkrr(hyp_σλ); storage[begin] = grad[begin]; storage[end] = grad[end])
+(∇gkrr::∇GaussianKRRML)() = ∇gkrr(∇gkrr |> get_GaussianKRRML |> hyperparameters)
