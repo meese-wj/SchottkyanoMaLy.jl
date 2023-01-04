@@ -2,7 +2,7 @@
 using LinearAlgebra
 using Statistics
 
-export single_component_loss, single_component_loss_gradient, mean_component_loss_gradient, total_loss_gradient
+export single_component_loss, single_component_loss_gradient, mean_component_loss_gradient, total_loss_gradient, total_loss
 
 single_component_deviation(prediction, value) = @fastmath @. prediction - value
 single_component_loss(prediction, value) = @fastmath @. 0.5 * single_component_deviation(prediction, value)^2

@@ -4,7 +4,7 @@ using LinearAlgebra
 export regularized_inverse, minimizing_component, minimizing_solution, 
        eltype, specific_heats, num_ensembles, num_temperatures, num_cheby_components, update!,
        InterpolationSet, cheby_components, msqdiff_Gram, gausskernel_Gram, deriv_Gram, inv_Gram,
-       TrainingSet, predicted_components, msqdiff_TvI, gausskernel_TvI, gausskernel_deriv_TvI,
+       TrainingSet, predict_component, predicted_components, msqdiff_TvI, gausskernel_TvI, gausskernel_deriv_TvI,
        GaussianKRRML, maximum_loss_order, hyperparameters, σvalue, λvalue, interpolationset, trainingset, ∇GaussianKRRML
 
 regularized_inverse(kernel_matrix, hypλ) = inv(kernel_matrix + (hypλ * LinearAlgebra.I))
@@ -261,13 +261,14 @@ function _compute_deriv_TvI!(trainset::TrainingSet, hypσ)
         gausskernel_deriv_TvI(trainset)[idx] = ∂σ_gausskernel(msqdiff_TvI(trainset)[idx], gausskernel_TvI(trainset)[idx], hypσ) 
     end
 end
+predict_component(νvec, Minv, fvec) = dot(νvec, Minv, fvec)
 function _compute_predicted_components!(trainset::TrainingSet, ensemble_idx, updated_interpset)
     Minv = inv_Gram(updated_interpset)
     interp_components = cheby_components(updated_interpset)
     train_interp_column = view( gausskernel_TvI(trainset), :, ensemble_idx )
     for comp_idx ∈ eachindex( eachcol(interp_components) )
         interp_comp_col = @view interp_components[:, comp_idx]
-        predicted_components(trainset, ensemble_idx)[comp_idx] = dot( train_interp_column, Minv, interp_comp_col )
+        predicted_components(trainset, ensemble_idx)[comp_idx] = predict_component( train_interp_column, Minv, interp_comp_col )
     end
     return predicted_components(trainset, ensemble_idx)
 end
