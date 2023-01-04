@@ -150,7 +150,7 @@ function _compute_deriv_Gram!(intset, hypσ)
 end
 function _compute_inv_Gram!(intset, hypλ) 
     Mmat = regularized_inverse( gausskernel_Gram(intset), hypλ ) 
-    inv_Gram(intset) .= inv(Mmat)
+    inv_Gram(intset) .= Mmat
 end
 
 """
@@ -381,6 +381,8 @@ function (gkrr::GaussianKRRML)(update_first::Bool = false)
     update_first ? update!(gkrr) : nothing
     all_predictions = (predicted_components ∘ trainingset)(gkrr)
     all_values = (cheby_components ∘ trainingset)(gkrr)
+    @show hyperparameters(gkrr)
+    println(@__LINE__)
     return total_loss(all_predictions, all_values, maximum_loss_order(gkrr))
 end
 (gkrr::GaussianKRRML)(hyp_σλ)= ( update!(gkrr, hyp_σλ[begin], hyp_σλ[end]); gkrr(false) )
@@ -423,9 +425,11 @@ This functor will calculate the [`total_loss_gradient`](@ref) of the
 monitored [`GaussianKRRML`](@ref) functor, returning a `Tuple` as the 
 gradient. 
 """
-function (∇gkrr::∇GaussianKRRML{T})(hyp_σλ) where T
+function (∇gkrr::∇GaussianKRRML{T})(hyp_σλ; update_first = true) where T
     gkrr = get_GaussianKRRML(∇gkrr)
+    update_first ? update!(gkrr) : nothing
+    @show hyperparameters(gkrr)
     return total_loss_gradient(trainingset(gkrr), interpolationset(gkrr), maximum_loss_order(gkrr))
 end
-(∇gkrr::∇GaussianKRRML)(storage, hyp_σλ) = (grad = ∇gkrr(hyp_σλ); storage[begin] = grad[begin]; storage[end] = grad[end])
-(∇gkrr::∇GaussianKRRML)() = ∇gkrr(∇gkrr |> get_GaussianKRRML |> hyperparameters)
+(∇gkrr::∇GaussianKRRML)(storage, hyp_σλ; kwargs...) = (grad = ∇gkrr(hyp_σλ; kwargs...); storage[begin] = grad[begin]; storage[end] = grad[end])
+(∇gkrr::∇GaussianKRRML)(; kwargs...) = ∇gkrr(∇gkrr |> get_GaussianKRRML |> hyperparameters; kwargs...)
