@@ -1,6 +1,5 @@
 
 using SchottkyAnoMaLy
-using LinearAlgebra
 using Test
 
 @info "Testing Gradient of Loss function"
@@ -28,8 +27,8 @@ using Test
         Kmat_2x2 = gausskernel(msqdiff_2x2, _σ)
         ∂Kmax_2x2 = ∂σ_gausskernel( msqdiff_2x2, Kmat_2x2, _σ )
 
-        # Invert M = K + _λI
-        Minv = inv( Kmat_2x2 + (_λ * LinearAlgebra.I) )
+        # Invert M = K + _λI from SchottkyAnoMaLy
+        Minv = regularized_inverse( Kmat_2x2, _λ )
 
         # Use the SchottkyAnoMaLy formulas for the predictions and gradients
         # We take the gradient at (predicted, value) = (1, 0) to remove the loss contribution
