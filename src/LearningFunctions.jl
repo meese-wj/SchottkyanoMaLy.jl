@@ -62,7 +62,7 @@ function single_component_loss_gradient( prediction::AbstractFloat, value::Abstr
     νT_Minv = transpose(νvector) * Minv # row vector
     ∂σval  = dot( ∂σνvector, Minv_f_vector) # column ⋅ column
     ∂σval += -dot( νT_Minv, Qmat, Minv_f_vector) # column ⋅ matrix ⋅ column
-    ∂λval = -dot( νvector, Minv, Minv_f_vector ) # column ⋅ column
+    ∂λval = -dot( νT_Minv, Minv_f_vector ) # row ⋅ column
     return single_component_deviation(prediction, value) .* ( ∂σval, ∂λval ) # return a Tuple as the gradient ∇ = (∂σ, ∂λ)
 end
 function single_component_loss_gradient( component_idx::Int, ensemble_idx::Int, updated_trainset, updated_interpset )
@@ -74,7 +74,7 @@ function single_component_loss_gradient( component_idx::Int, ensemble_idx::Int, 
 end
 
 function mean_component_loss_gradient( component_idx, updated_trainset, updated_interpset )
-    num_ens = num_ensembles(updated_trainset)
+    num_ens::Int = num_ensembles(updated_trainset)
     out_type = Base.eltype(updated_trainset)
     output_σ::out_type = zero(out_type)
     output_λ::out_type = zero(out_type)
