@@ -413,7 +413,7 @@ Create a [`∇GaussianKRRML`](@ref) functor referencing the given
 Dereference the [`GaussianKRRML`](@ref) functor monitored by the
 given [`∇GaussianKRRML`](@ref) one.
 """
-get_GaussianKRRML(∇gkrr::∇GaussianKRRML) = ∇gkrr.gkrr[]
+get_GaussianKRRML(∇gkrr::∇GaussianKRRML{T}) where T = (∇gkrr.gkrr[])::GaussianKRRML{T}
 
 """
     (::∇GaussianKRRML)([update_first = false])
@@ -425,7 +425,7 @@ gradient.
 """
 function (∇gkrr::∇GaussianKRRML{T})(hyp_σλ) where T
     gkrr = get_GaussianKRRML(∇gkrr)
-    return total_loss_gradient(trainingset(gkrr), interpolationset(gkrr), maximum_loss_order(gkrr))::Tuple{T, T}
+    return total_loss_gradient(trainingset(gkrr), interpolationset(gkrr), maximum_loss_order(gkrr))
 end
 (∇gkrr::∇GaussianKRRML)(storage, hyp_σλ) = (grad = ∇gkrr(hyp_σλ); storage[begin] = grad[begin]; storage[end] = grad[end])
 (∇gkrr::∇GaussianKRRML)() = ∇gkrr(∇gkrr |> get_GaussianKRRML |> hyperparameters)
