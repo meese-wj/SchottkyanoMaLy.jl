@@ -382,10 +382,7 @@ function (gkrr::GaussianKRRML)(update_first::Bool = false)
     update_first ? update!(gkrr) : nothing
     all_predictions = (predicted_components ∘ trainingset)(gkrr)
     all_values = (cheby_components ∘ trainingset)(gkrr)
-    @show hyperparameters(gkrr)
-    println(@__LINE__)
     tl = total_loss(all_predictions, all_values, num_loss_components(gkrr))
-    @show tl
     return tl
 end
 (gkrr::GaussianKRRML)(hyp_σλ)= ( update!(gkrr, hyp_σλ...); gkrr(false) )
@@ -433,9 +430,6 @@ function (∇gkrr::∇GaussianKRRML{T})(hyp_σλ::Union{AbstractArray, Tuple}, u
     tl = zero(eltype(hyp_σλ))
     update_first ? (tl = gkrr(hyp_σλ)) : nothing
     tlg = total_loss_gradient(trainingset(gkrr), interpolationset(gkrr), num_loss_components(gkrr))
-    @show @__LINE__
-    @show tl, hyperparameters(gkrr)
-    @show tlg
     return tlg
 end
 (∇gkrr::∇GaussianKRRML)(storage, hyp_σλ::Union{AbstractArray, Tuple}, update_first::Bool = true) = (grad = ∇gkrr(hyp_σλ, update_first); storage[begin] = grad[begin]; storage[end] = grad[end])

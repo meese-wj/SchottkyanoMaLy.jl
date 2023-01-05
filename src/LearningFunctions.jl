@@ -87,7 +87,6 @@ function mean_component_loss_gradient( component_idx, updated_trainset, updated_
 end
 
 function total_loss_gradient( updated_trainset, updated_interpset, num_comps = num_cheby_components(updated_interpset) )
-    @show num_comps
     out_type = Base.eltype(updated_trainset)
     output_σ::out_type = zero(out_type)
     output_λ::out_type = zero(out_type)
@@ -109,5 +108,6 @@ function total_loss( predictions, values, num_comps::Union{Nothing, Int} = nothi
         tl += single_component_loss(comp_rows...) |> mean
     end
     return tl
+    # TODO: Why is this different than the above?
     # return sum( tup -> (mean ∘ single_component_loss)(tup...), zip( eachcol.( (preds, vals) )... ) )
 end
