@@ -103,5 +103,11 @@ function total_loss( predictions, values, num_comps::Union{Nothing, Int} = nothi
     num_comps === nothing ? size(predictions)[1] : num_comps
     preds = @view predictions[1:num_comps, :]
     vals = @view values[1:num_comps, :]
-    return sum( tup -> (mean ∘ single_component_loss)(tup...), zip( eachcol.( (preds, vals) )... ) )
+    out_type = eltype(predictions)
+    tl::out_type = zero(out_type)
+    for comp_rows ∈ zip( eachrow.( ( preds, vals ) )... )
+        tl += single_component_loss(comp_rows...) |> mean
+    end
+    return tl
+    # return sum( tup -> (mean ∘ single_component_loss)(tup...), zip( eachcol.( (preds, vals) )... ) )
 end
