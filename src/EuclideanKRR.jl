@@ -327,6 +327,7 @@ function GaussianKRRML(temperatures, interp_cVs, interp_cheby_components, interp
 end
 
 maximum_loss_order(gkrr::GaussianKRRML) = gkrr.max_loss_order
+num_loss_components(gkrr::GaussianKRRML) = maximum_loss_order(gkrr) + 1
 hyperparameters(gkrr::GaussianKRRML) = gkrr.hyp_σλ
 σvalue( gkrr::GaussianKRRML ) = hyperparameters(gkrr)[begin]
 λvalue( gkrr::GaussianKRRML ) = hyperparameters(gkrr)[end]
@@ -355,7 +356,7 @@ the functor):
     The second method is for convenience in not constructing a `Tuple` 
     when testing hyperparameter values individually.
 """
-function update!(gkrr::GaussianKRRML, hypervals = hyperparameters(gkrr))
+function update!(gkrr::GaussianKRRML, hypervals::Union{AbstractArray, Tuple} = hyperparameters(gkrr))
     _update_hyperparameters!(gkrr, hypervals...)
     update!( interpolationset(gkrr), hyperparameters(gkrr)... )
     update!( trainingset(gkrr), interpolationset(gkrr), σvalue(gkrr) )
@@ -383,9 +384,11 @@ function (gkrr::GaussianKRRML)(update_first::Bool = false)
     all_values = (cheby_components ∘ trainingset)(gkrr)
     @show hyperparameters(gkrr)
     println(@__LINE__)
-    return total_loss(all_predictions, all_values, maximum_loss_order(gkrr))
+    tl = total_loss(all_predictions, all_values, num_loss_components(gkrr))
+    @show tl
+    return tl
 end
-(gkrr::GaussianKRRML)(hyp_σλ)= ( update!(gkrr, hyp_σλ[begin], hyp_σλ[end]); gkrr(false) )
+(gkrr::GaussianKRRML)(hyp_σλ)= ( update!(gkrr, hyp_σλ...); gkrr(false) )
 
 """
     ∇GaussianKRRML{T <: Number}
@@ -425,11 +428,15 @@ This functor will calculate the [`total_loss_gradient`](@ref) of the
 monitored [`GaussianKRRML`](@ref) functor, returning a `Tuple` as the 
 gradient. 
 """
-function (∇gkrr::∇GaussianKRRML{T})(hyp_σλ; update_first = true) where T
+function (∇gkrr::∇GaussianKRRML{T})(hyp_σλ::Union{AbstractArray, Tuple}, update_first::Bool = true) where T
     gkrr = get_GaussianKRRML(∇gkrr)
-    update_first ? update!(gkrr) : nothing
-    @show hyperparameters(gkrr)
-    return total_loss_gradient(trainingset(gkrr), interpolationset(gkrr), maximum_loss_order(gkrr))
+    tl = zero(eltype(hyp_σλ))
+    update_first ? (tl = gkrr(hyp_σλ)) : nothing
+    tlg = total_loss_gradient(trainingset(gkrr), interpolationset(gkrr), num_loss_components(gkrr))
+    @show @__LINE__
+    @show tl, hyperparameters(gkrr)
+    @show tlg
+    return tlg
 end
-(∇gkrr::∇GaussianKRRML)(storage, hyp_σλ; kwargs...) = (grad = ∇gkrr(hyp_σλ; kwargs...); storage[begin] = grad[begin]; storage[end] = grad[end])
-(∇gkrr::∇GaussianKRRML)(; kwargs...) = ∇gkrr(∇gkrr |> get_GaussianKRRML |> hyperparameters; kwargs...)
+(∇gkrr::∇GaussianKRRML)(storage, hyp_σλ::Union{AbstractArray, Tuple}, update_first::Bool = true) = (grad = ∇gkrr(hyp_σλ, update_first); storage[begin] = grad[begin]; storage[end] = grad[end])
+# (∇gkrr::∇GaussianKRRML)() = ∇gkrr(∇gkrr |> get_GaussianKRRML |> hyperparameters, false)
