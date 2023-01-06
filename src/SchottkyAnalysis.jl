@@ -3,7 +3,7 @@ using Optim
 
 export SchottkyOptions
 
-const _SA_input_pair{T} where T = Tuple{T, T}
+const _SA_input_pair = Tuple{T, T} where T # This is purely in anticipation of maybe adding Vector pair too for convenience
 
 """
     SchottkyOptions{T <: Real}
