@@ -28,10 +28,13 @@ implements.
 ### Optimization Options
 
 These options are used by `Optim.jl` to tune the hyperparameters on the [`TrainingSet`](@ref).
-Currently, we use a multivariate constrained optimization method since 
+Currently, we use a multivariate constrained local optimization method since 
 
 1. only the magnitude of the interpolation bandwidth `σ` matters,
 2. the stiffness `λ > 0` to ensure boundedness of the solution and numerical stability.
+
+Local optimization is preferred over global optimization in this case, as we just need a "good enough" prediction, as I recommend
+repeating this process for a few different [`InterpolationSet`](@ref)s and [`TrainingSet`](@ref)s to build confidence in the results.
 
 * `optim_lb = (1e-12, 1e-8)`: the lower `(σ, λ)` bounds for the constrained optimization
 * `optim_ub = (Inf, Inf):` the upper `(σ, λ)` bounds for the constrained optimization
@@ -42,7 +45,7 @@ Currently, we use a multivariate constrained optimization method since
 !!! note 
     * `optim_method`:
         * Only `Optim.ZerothOrderOptimizer`s and `Optim.FirstOrderOptimizer`s are possible for [`SchottkyAnoMaLy`](@ref). Higher-order methods require a Hessian which is frankly too expensive to compute exactly for any reasonable-sized [`InterpolationSet`](@ref).
-        * The zeroth-order `Optim.NelderMead()` method seems to fare well in my tests, and may work well for large [`InterpolationSet`](@ref)s but it can be a bit sketchy for constrained problems.
+        * The zeroth-order `Optim.NelderMead()` method seems to fare well in my tests, and may work well for large [`InterpolationSet`](@ref)s, but it *may* be a bit sketchy for constrained problems. So far, I haven't run into problems though.
     
     * `optim_algorithm`:
         * For constrained optimization, `Optim` suggests one use the `Fminbox` and so that is the only one I've tried.
@@ -74,6 +77,7 @@ These parameters are for configuring the analysis globally.
 
 * `analysis_seed = 42`: global random seed to set for reproducibility
 * `analysis_nls = TwoLevelSystem()`: the type of statistical mechanics model used to form the specific heats from a barrier distribution
+* `analysis_iterations = 1`: the number of times one wants to perform the analysis for different [`InterpolationSet`](@ref) and [`TrainingSet`](@ref) and average the predictions
 
 """
 Base.@kwdef struct SchottkyOptions{T <: Real}
@@ -104,5 +108,6 @@ Base.@kwdef struct SchottkyOptions{T <: Real}
     # ⇒ Analysis-wide parameters
     analysis_seed::Int = 42
     analysis_nls::NLevelSystem = TwoLevelSystem()
+    analysis_iterations::Int = 1
 
 end
