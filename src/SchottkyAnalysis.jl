@@ -1,4 +1,5 @@
 
+using Random
 using Optim
 import Base: eltype
 
@@ -56,8 +57,13 @@ These options are organized by purpose.
 These parameters are for configuring the analysis globally.
 
 * `analysis_seed = 42`: global random seed to set for reproducibility
+* `analysis_rng = Xoshiro(analysis_seed)`: global random number generator for reproducibility
 * `analysis_nls = TwoLevelSystem()`: the type of statistical mechanics model used to form the specific heats from a barrier distribution
 * `analysis_iterations = 1`: the number of times one wants to perform the analysis for different [`InterpolationSet`](@ref) and [`TrainingSet`](@ref) and average the predictions
+
+!!! note 
+    If, for some reason, `analysis_rng` does not match `analysis_seed`, don't fret. I'll overwrite 
+    whatever the seed was for the passed `analysis_rng` upon construction.
 
 
 ## Machine-Learning Algorithm Options
@@ -116,6 +122,14 @@ These are used to obtain the interpolated, trained, and learned Chebyshev coeffi
 * `cheby_order = 300`: the order of the Chebyshev polynomial used for the interpolation of the Schottky barrier distribution
 * `distribution_domain = (0, 30)`: the interpolation interval for the Schottky barrier distributions
 
+## Integration Options 
+
+These are for `QuadGK.quadgk` and `NumericalIntegration.integrate`.
+
+* `quadgk_rtol = sqrt(eps(T))`: the convergence relative tolerance in the adaptive Gauss Kronod integration to obtain the specific heat at a given temperature
+* `quadgk_domain = (0, Inf)`: the domain over which to integrate the ensembles to determine the specific heats
+* `numint_method = TrapezoidalFast()`: the method used to integrate the difference between the specific heats (see [`msqdiff`](@ref) and friends) 
+
 """
 Base.@kwdef struct SchottkyOptions{T <: AbstractFloat}
     # Default attributes
@@ -123,6 +137,7 @@ Base.@kwdef struct SchottkyOptions{T <: AbstractFloat}
 
     # ⇒ Analysis-wide parameters
     analysis_seed::Int = 42
+    analysis_rng::AbstractRNG = Xoshiro(analysis_seed)
     analysis_nls::NLevelSystem = TwoLevelSystem()
     analysis_iterations::Int = 1
 
@@ -147,6 +162,10 @@ Base.@kwdef struct SchottkyOptions{T <: AbstractFloat}
     cheby_order::Int = 300
     distribution_domain::_SA_input_pair{T} = T.((0, 30))
 
+    # ⇒ Integration parameters 
+    quadgk_rtol::T = sqrt(eps(T))
+    quadgk_domain::_SA_input_pair{T} = T.((0, Inf))
+    numint_method::NumericalIntegration.IntegrationMethod = TrapezoidalFast()
 end
 
 Base.eltype(::SchottkyOptions{T}) where T = T
@@ -182,9 +201,45 @@ struct SchottkyAnalysis{T <: AbstractFloat}
     input_cV::Vector{T}
     opts::SchottkyOptions{T}
 
+    # Random number stuff
+    rng::AbstractRNG
+    rdveg::RandomDonutVolcanoGenerator{T}
+
     # EnsemblePredictors
     predictors::Vector{EnsemblePredictor{T}}
 
     # Predictions
     predictions::Vector{Vector{T}}
 end
+
+function SchottkyAnalysis(temps, input_cV, opts::SchottkyOptions)
+    @assert length(temps) == length(input_cV) "Size mismatch. There must be as many temperatures as specific heats. Got $(length(temps)) and $(length(input_cV))."
+
+    Temp_type = eltype(temps)
+    rdveg = RandomDonutVolcanoGenerator{Temp_type}(opts.max_num_dve, opts.dve_mode_range..., opts.dve_width_range...)
+    predictors = EnsemblePredictor{Temp_type}[]
+    predictions = Vector{Temp_type}[]
+    for _ ∈ UnitRange(1, opts.analysis_iterations)
+        push!( predictors,
+               EnsemblePredictor{Temp_type}(
+                opts.analysis_rng,
+                rdveg,
+                opts.num_interp,
+                opts.num_train,
+                temps,
+                opts.cheby_order,
+                opts.distribution_domain,
+                opts.initial_hyperparameters,
+                opts.max_cheby_component,
+                opts.quadgk_domain[begin],
+                opts.quadgk_domain[end],
+                opts.analysis_nls,
+                opts.quadgk_rtol,
+                opts.numint_method
+               )
+        )
+        push!( predictions, zeros(Temp_type, opts.cheby_order) )
+    end
+    return SchottkyAnalysis{Temp_type}( temps, input_cV, opts )
+end
+
