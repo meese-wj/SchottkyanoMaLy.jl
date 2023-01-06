@@ -9,7 +9,8 @@ const _SA_input_pair = Tuple{T, T} where T # This is purely in anticipation of m
     SchottkyOptions{T <: Real}
 
 Keyword-constructed `struct` that handles all of the default 
-configurable options for the SchottkyAnalysis.
+configurable options for the SchottkyAnalysis. The default type `T`
+is `Float64`.
 
 # Options
 
@@ -109,5 +110,5 @@ Base.@kwdef struct SchottkyOptions{T <: Real}
     analysis_seed::Int = 42
     analysis_nls::NLevelSystem = TwoLevelSystem()
     analysis_iterations::Int = 1
-
 end
+SchottkyOptions(; kwargs...) = SchottkyOptions{Float64}(; kwargs...)
