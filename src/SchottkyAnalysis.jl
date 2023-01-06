@@ -1,20 +1,59 @@
 
 using Optim
+import Base: eltype
 
-export SchottkyOptions
+export SchottkyOptions, eltype
 
 const _SA_input_pair = Tuple{T, T} where T # This is purely in anticipation of maybe adding Vector pair too for convenience
 
 """
-    SchottkyOptions{T <: Real}
+    SchottkyOptions{T <: AbstractFloat}
 
 Keyword-constructed `struct` that handles all of the default 
 configurable options for the SchottkyAnalysis. The default type `T`
 is `Float64`.
 
+# Usage
+
+The simplest usage of `SchottkyOptions` is just to use the defaults, such as 
+
+```jldoctest
+julia> opts = SchottkyOptions(); # Use the default values and parametric type (Float64)
+
+julia> eltype(opts)
+Float64
+```
+
+However, if a different float is required, say `Float32`, just pass the desired type into the constructor:
+
+```jldoctest
+julia> opts32 = SchottkyOptions(Float32); # Use the default values but set the parameteric type to Float32
+
+julia> eltype(opts32)
+Float32
+```
+
+Finally, if one wants to adjust any of the options to a different value, use the keyword in the 
+constructor. (Note that keywords must follow positional arguments.)
+
+```jldoctest
+julia> opts = SchottkyOptions(analysis_seed = 25); # Keep all default values (T = Float64) except the analysis_seed which we set to 25
+
+julia> opts32 = SchottkyOptions(Float32; analysis_seed = 25); # Do the same but for T = Float32. Note the (conventional) ; separating the positional and keyword arguments
+```
+
 # Options
 
 These options are organized by purpose.
+
+## Analysis-wide Options
+
+These parameters are for configuring the analysis globally.
+
+* `analysis_seed = 42`: global random seed to set for reproducibility
+* `analysis_nls = TwoLevelSystem()`: the type of statistical mechanics model used to form the specific heats from a barrier distribution
+* `analysis_iterations = 1`: the number of times one wants to perform the analysis for different [`InterpolationSet`](@ref) and [`TrainingSet`](@ref) and average the predictions
+
 
 ## Machine-Learning Algorithm Options
 
@@ -72,18 +111,15 @@ These are used to obtain the interpolated, trained, and learned Chebyshev coeffi
 * `cheby_order = 300`: the order of the Chebyshev polynomial used for the interpolation of the Schottky barrier distribution
 * `distribution_domain = (0, 30)`: the interpolation interval for the Schottky barrier distributions
 
-## Analysis-wide Options
-
-These parameters are for configuring the analysis globally.
-
-* `analysis_seed = 42`: global random seed to set for reproducibility
-* `analysis_nls = TwoLevelSystem()`: the type of statistical mechanics model used to form the specific heats from a barrier distribution
-* `analysis_iterations = 1`: the number of times one wants to perform the analysis for different [`InterpolationSet`](@ref) and [`TrainingSet`](@ref) and average the predictions
-
 """
-Base.@kwdef struct SchottkyOptions{T <: Real}
+Base.@kwdef struct SchottkyOptions{T <: AbstractFloat}
     # Default attributes
     # ---------------------------------------
+
+    # ⇒ Analysis-wide parameters
+    analysis_seed::Int = 42
+    analysis_nls::NLevelSystem = TwoLevelSystem()
+    analysis_iterations::Int = 1
 
     # ⇒ Learning algorithm options
     num_interp::Int = 128
@@ -106,9 +142,7 @@ Base.@kwdef struct SchottkyOptions{T <: Real}
     cheby_order::Int = 300
     distribution_domain::_SA_input_pair{T} = T.((0, 30))
 
-    # ⇒ Analysis-wide parameters
-    analysis_seed::Int = 42
-    analysis_nls::NLevelSystem = TwoLevelSystem()
-    analysis_iterations::Int = 1
 end
-SchottkyOptions(; kwargs...) = SchottkyOptions{Float64}(; kwargs...)
+SchottkyOptions(::Type{T} = Float64; kwargs...) where T = SchottkyOptions{T}(; kwargs...)
+
+Base.eltype(opts::SchottkyOptions{T}) where T = T
