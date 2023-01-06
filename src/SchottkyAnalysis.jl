@@ -156,11 +156,35 @@ Base.eltype(::SchottkyOptions{T}) where T = T
 
 A `struct` to contain the data for the machine learning analysis.
 
+# Contents
 
+This container is split into input and analysis-generated data.
+
+## Input data
+
+The user need only specify the following:
+
+* `temperatures::Vector{T}`: the list of temperatures 
+* `input_cV::Vector{T}`: the corresponding specific heat values to fit 
+* `opts::SchottkyOptions{T}`: analysis options
+
+## Analysis-generated data
+
+These values will be calculated automatically either on initialization,
+during training, or while making predictions.
+
+* `predictors::Vector{EnsemblePredictor{T}}`: the collection of [`EnsemblePredictor`](@ref) for each analysis iteration
+* `predictions::Vector{Vector{T}}`: the predicted Chebyshev coefficients for each analysis iteration
 """
 struct SchottkyAnalysis{T <: AbstractFloat}
+    # Input data
     temperatures::Vector{T}
     input_cV::Vector{T}
-
     opts::SchottkyOptions{T}
+
+    # EnsemblePredictors
+    predictors::Vector{EnsemblePredictor{T}}
+
+    # Predictions
+    predictions::Vector{Vector{T}}
 end
