@@ -2,7 +2,7 @@
 using Optim
 import Base: eltype
 
-export SchottkyOptions, eltype
+export SchottkyOptions, eltype, SchottkyAnalysis
 
 const _SA_input_pair = Tuple{T, T} where T # This is purely in anticipation of maybe adding Vector pair too for convenience
 
@@ -10,24 +10,23 @@ const _SA_input_pair = Tuple{T, T} where T # This is purely in anticipation of m
     SchottkyOptions{T <: AbstractFloat}
 
 Keyword-constructed `struct` that handles all of the default 
-configurable options for the SchottkyAnalysis. The default type `T`
-is `Float64`.
+configurable options for the SchottkyAnalysis. 
 
 # Usage
 
-The simplest usage of `SchottkyOptions` is just to use the defaults, such as 
+The simplest usage of `SchottkyOptions` is just to use the defaults with `T = Float64`
 
 ```jldoctest
-julia> opts = SchottkyOptions(); # Use the default values and parametric type (Float64)
+julia> opts = SchottkyOptions{Float64}(); # Use the default values with parametric type Float64
 
 julia> eltype(opts)
 Float64
 ```
 
-However, if a different float is required, say `Float32`, just pass the desired type into the constructor:
+However, if a different float is required, say `Float32`, just pass the desired type into the constructor as:
 
 ```jldoctest
-julia> opts32 = SchottkyOptions(Float32); # Use the default values but set the parameteric type to Float32
+julia> opts32 = SchottkyOptions{Float32}(); # Use the default values but set the parameteric type to Float32
 
 julia> eltype(opts32)
 Float32
@@ -37,9 +36,15 @@ Finally, if one wants to adjust any of the options to a different value, use the
 constructor. (Note that keywords must follow positional arguments.)
 
 ```jldoctest
-julia> opts = SchottkyOptions(analysis_seed = 25); # Keep all default values (T = Float64) except the analysis_seed which we set to 25
+julia> opts = SchottkyOptions{Float64}(analysis_seed = 25); # Keep all default values (T = Float64) except the analysis_seed which we set to 25
 
-julia> opts32 = SchottkyOptions(Float32; analysis_seed = 25); # Do the same but for T = Float32. Note the (conventional) ; separating the positional and keyword arguments
+julia> opts.analysis_seed
+25
+
+julia> opts32 = SchottkyOptions{Float32}(analysis_seed = 25); # Do the same but for T = Float32. Note the (conventional) ; separating the positional and keyword arguments
+
+julia> opts32.analysis_seed
+25
 ```
 
 # Options
@@ -143,6 +148,19 @@ Base.@kwdef struct SchottkyOptions{T <: AbstractFloat}
     distribution_domain::_SA_input_pair{T} = T.((0, 30))
 
 end
-SchottkyOptions(::Type{T} = Float64; kwargs...) where T = SchottkyOptions{T}(; kwargs...)
 
-Base.eltype(opts::SchottkyOptions{T}) where T = T
+Base.eltype(::SchottkyOptions{T}) where T = T
+
+"""
+    SchottkyAnalysis{T <: AbstractFloat}
+
+A `struct` to contain the data for the machine learning analysis.
+
+
+"""
+struct SchottkyAnalysis{T <: AbstractFloat}
+    temperatures::Vector{T}
+    input_cV::Vector{T}
+
+    opts::SchottkyOptions{T}
+end
