@@ -12,5 +12,6 @@ include("GaussianKernel.jl")
 include("SpecificHeatLinearAlgebra.jl")
 include("LearningFunctions.jl")
 include("EuclideanKRR.jl")
+include("SchottkyAnalysis.jl")
 
 end # module SchottkyAnoMaLy
