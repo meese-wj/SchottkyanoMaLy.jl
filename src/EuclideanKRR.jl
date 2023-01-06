@@ -262,19 +262,21 @@ function _compute_deriv_TvI!(trainset::TrainingSet, hypσ)
     end
 end
 predict_component(νvec, Minv, fvec) = dot(νvec, Minv, fvec)
-function _compute_predicted_components!(trainset::TrainingSet, ensemble_idx, updated_interpset)
+function _compute_predicted_components!(trainset::TrainingSet, ensemble_idx, updated_interpset, num_comps::Union{Nothing, Int} = nothing)
     Minv = inv_Gram(updated_interpset)
     interp_components = cheby_components(updated_interpset)
     train_interp_column = view( gausskernel_TvI(trainset), :, ensemble_idx )
-    for comp_idx ∈ eachindex( eachcol(interp_components) )
+    max_idx = num_comps === nothing ? size(interp_components)[2] : num_comps
+    @inbounds @simd for comp_idx ∈ UnitRange(1, max_idx)
+    # @inbounds @simd for comp_idx ∈ eachindex( eachcol(interp_components) )
         interp_comp_col = @view interp_components[:, comp_idx]
         predicted_components(trainset, ensemble_idx)[comp_idx] = predict_component( train_interp_column, Minv, interp_comp_col )
     end
     return predicted_components(trainset, ensemble_idx)
 end
-function _compute_predicted_components!(trainset::TrainingSet, updated_interpset)
-    for train_ens_idx ∈ eachindex(eachcol( predicted_components(trainset) ))
-        _compute_predicted_components!( trainset, train_ens_idx, updated_interpset )
+function _compute_predicted_components!(trainset::TrainingSet, updated_interpset, num_comps::Union{Nothing, Int} = nothing)
+    @inbounds Threads.@threads for train_ens_idx ∈ eachindex(eachcol( predicted_components(trainset) ))
+        _compute_predicted_components!( trainset, train_ens_idx, updated_interpset, num_comps )
     end
     return predicted_components(trainset)
 end
@@ -292,10 +294,10 @@ The order of the updates is *crucial*. They follow as
 1. Compute the `gausskernel_deriv_TvI(trainset)` with the new `hypσ`.
 1. From these sets and a given [`InterpolationSet`](@ref), compute the `predicted_components(trainset)`.
 """
-function update!(trainset::TrainingSet, updated_intset::InterpolationSet, hypσ)
+function update!(trainset::TrainingSet, updated_intset::InterpolationSet, hypσ, num_comps::Union{Nothing, Int} = nothing)
     _compute_gausskernel_TvI!(trainset, hypσ)
     _compute_deriv_TvI!(trainset, hypσ)
-    _compute_predicted_components!(trainset, updated_intset) 
+    _compute_predicted_components!(trainset, updated_intset, num_comps) 
     return trainset
 end
 
@@ -334,7 +336,8 @@ hyperparameters(gkrr::GaussianKRRML) = gkrr.hyp_σλ
 interpolationset(gkrr::GaussianKRRML) = gkrr.interpset
 trainingset(gkrr::GaussianKRRML) = gkrr.trainset
 
-_update_hyperparameters!( gkrr::GaussianKRRML{T}, σ, λ) where T = gkrr.hyp_σλ = T.((σ, λ)) 
+_update_hyperparameters!( gkrr::GaussianKRRML{T}, hypσλ) where T = gkrr.hyp_σλ = T.(tuple(hypσλ...)) 
+_update_hyperparameters!( gkrr::GaussianKRRML, σ::Number, λ::Number) = _update_hyperparameters!(gkrr, (σ, λ))
 
 """
     update!(gkrr::GaussianKRRML, [hypervals = (σ, λ)])
