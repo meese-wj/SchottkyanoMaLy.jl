@@ -131,7 +131,7 @@ These are for `QuadGK.quadgk` and `NumericalIntegration.integrate`.
 * `numint_method = TrapezoidalFast()`: the method used to integrate the difference between the specific heats (see [`msqdiff`](@ref) and friends) 
 
 """
-Base.@kwdef struct SchottkyOptions{T <: AbstractFloat}
+struct SchottkyOptions{T <: AbstractFloat}
     # Default attributes
     # ---------------------------------------
 
@@ -166,6 +166,104 @@ Base.@kwdef struct SchottkyOptions{T <: AbstractFloat}
     quadgk_rtol::T = sqrt(eps(T))
     quadgk_domain::_SA_input_pair{T} = T.((0, Inf))
     numint_method::NumericalIntegration.IntegrationMethod = TrapezoidalFast()
+end
+
+function SchottkyOptions(;
+                          analysis_seed = 42,
+                          analysis_rng = Xoshiro(analysis_seed),
+                          analysis_nls = TwoLevelSystem(),
+                          analysis_iterations = 1,
+                          num_interp = 128,
+                          num_train = num_interp,
+                          max_cheby_component = 10,
+                          initial_hyperparameters = (0.5, 0.5),
+                          optim_lb = (1e-12, 1e-8),
+                          optim_ub = (Inf, Inf),
+                          optim_method = ConjugateGradient(),
+                          optim_algorithm = Fminbox(optim_method),
+                          optim_options = Optim.Options(show_trace = true),
+                          max_num_dve = 30,
+                          dve_mode_range = nothing,
+                          global_dve_mode_range = (0, 5),          # Use these, appropriately scaled to global_distribution_domain, if dve_mode_range isa Nothing
+                          dve_width_range = nothing,
+                          global_dve_width_range = dve_mode_range, # Use these, appropriately scaled to global_distribution_domain, if dve_mode_range isa Nothing
+                          cheby_order = 300,
+                          distribution_domain, # No default is resonable! (It depends on temperature scale.)
+                          global_distribution_domain = (0, 30)     # Use this to scale the dve_*_range when they are not supplied
+                          quadgk_rtol = sqrt(eps(eltype(distribution_domain))),
+                          quadgk_domain = (0, Inf),
+                          numint_method = TrapezoidalFast()
+    )
+
+    # Set and check the Chebyshev interpolation parameters
+    # These need to be checked first because the control the scales and types of the others
+    _cheby_order = cheby_order
+    @assert _cheby_order ≥ 0 "The order of the Chebyshev interpolation must be a nonnegative number. Got $_cheby_order."
+    _distribution_domain = distribution_domain
+    Ttype = eltype(_distribution_domain)
+
+    # Set and check the analysis-wide parameters
+    _analysis_seed = analysis_seed
+    _analysis_rng = (analysis_rng |> typeof)(_analysis_seed) # to be sure the seed matters...
+    _analysis_nls = analysis_nls
+    _analysis_iterations = analysis_iterations
+    @assert _analysis_iterations ≥ 0 "The number of analysis_iterations ≥ 0. Got $_analysis_iterations."
+
+    # Set and check the learning algorithm parameters
+    _num_interp = num_interp
+    @assert _num_interp > 1 "The size of the InterpolationSet must be greater than one. Got $_num_interp."
+    _num_train = num_train
+    @assert _num_train > 1 "The size of the TrainingSet must be greater than one. Got $_num_train."
+    _max_cheby_component = max_cheby_component
+    @assert  0 ≤ _max_cheby_component ≤ _cheby_order "The maximum Chebyshev component to include in the loss must be greater than or equal to zero and less than the maximum index. Got $_max_cheby_component while the maximum is $_cheby_order."
+    _initial_hyperparameters = Ttype.(initial_hyperparameters)
+
+    # Set and check the Optim options
+    _optim_lb = Ttype.(optim_lb)
+    @assert all(_optim_lb .> zero(Ttype)) "The lower bounds for the constrained optimization must all be greater than zero. Got $_optim_lb."
+    _optim_ub = Ttype.(optim_ub)
+    @assert all(_optim_lb .> _optim_lb) "The upper bounds for the constrained optimization must all be greater than the lower bounds. Got $_optim_ub while the lower bounds are $_optim_lb."
+    _optim_method = optim_method
+    @assert _optim_method isa Union{Optim.ZerothOrderOptimizer, Optim.FirstOrderOptimizer} "The supported optimization methods must be either a Optim.ZerothOrderOptimizer or a Optim.FirstOrderOptimizer. Got $_optim_method."
+    _optim_algorithm = optim_algorithm
+    @assert _optim_algorithm isa Optim.AbstractConstrainedOptimizer "The only supported optimization algorithms are constrained. Got $_optim_algorithm."
+    _optim_options = optim_options
+    @assert _optim_options isa Optim.Options "The optim_options keyword argument is to provide Optim.Options to the optimization routines. Please supply an instance of that type (or use the default)."
+
+    # Set and check the DonutVolcanoEnsemble parameters
+    _max_num_dve = max_num_dve
+    @assert _max_num_dve > 0 "The maximum number of DonutVolcanoEnsembles in a single random distribution of barriers must be greater than zero."
+    _dve_mode_range = dve_mode_range
+    if _dve_mode_range isa Nothing
+        Δext = _distribution_domain[end] - _distribution_domain[begin]
+        gΔext = global_distribution_domain[end] - _distribution_domain[begin]
+        _dve_mode_range = Δext / gΔext .* global_dve_mode_range
+    end
+    @assert _distribution_domain[begin] ≤ _dve_mode_range[begin] && _dve_mode_range[end] ≤ _distribution_domain[end] "The supplied mode range must lie within the distribution domain. Got $_dve_mode_range while the domain is $_distribution_domain."
+    if _dve_width_range isa Nothing
+        Δext = _distribution_domain[end] - _distribution_domain[begin]
+        gΔext = global_distribution_domain[end] - _distribution_domain[begin]
+        _dve_width_range = Δext / gΔext .* global_dve_width_range
+    end
+    _dve_width_range = Ttype.(dve_width_range)
+    @assert _distribution_domain[begin] ≤ _dve_width_range[begin] && _dve_width_range[end] ≤ _distribution_domain[end] "The supplied width range must lie within the distribution domain. Got $_dve_width_range while the domain is $_distribution_domain."
+
+    # Set and check the various integration parameters
+    _quadgk_rtol = Ttype(quadgk_rtol)
+    @assert _quadgk_rtol > zero(Ttype) "The relative tolerance for the Gauss-Kronod adaptive quadrature must be greater than zero. Got $_quadgk_rtol."
+    _quadgk_domain = Ttype.(quadgk_domain)
+    @warn any( _quadgk_domain .!= Ttype.((0, Inf)) ) "The domain for the Gauss-Kronod adaptive quadrature is set to something other than (0, Inf). Was this a mistake?"
+    _numint_method = numint_method
+    @assert _numint_method isa NumericalIntegration.IntegrationMethod "The numint_method keyword must specify a NumericalIntegration.IntegrationMethod. Got $_numint_method."
+
+    return SchottkyOptions{Ttype}(
+        _analysis_seed, _analysis_rng, _analysis_nls, _analysis_iterations,
+        _num_interp, _num_train, _max_cheby_component, _initial_hyperparameters,
+        _optim_lb, _optim_ub, _optim_method, _optim_algorithm, _optim_options,
+        _max_num_dve, _dve_mode_range, _dve_width_range,
+        _cheby_order, _distribution_domain, 
+        _quadgk_rtol, _quadgk_domain, _numint_method
+    )
 end
 
 Base.eltype(::SchottkyOptions{T}) where T = T
