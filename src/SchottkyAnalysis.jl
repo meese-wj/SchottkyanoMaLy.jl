@@ -305,8 +305,7 @@ struct SchottkyAnalysis{T <: AbstractFloat}
     input_cV::Vector{T}
     opts::SchottkyOptions{T}
 
-    # Random number stuff
-    rng::AbstractRNG
+    # Random number stuff for reproducibility
     rdveg::RandomDonutVolcanoGenerator{T}
 
     # EnsemblePredictors
@@ -320,12 +319,12 @@ function SchottkyAnalysis(temps, input_cV, opts::SchottkyOptions)
     @assert length(temps) == length(input_cV) "Size mismatch. There must be as many temperatures as specific heats. Got $(length(temps)) and $(length(input_cV))."
 
     Temp_type = eltype(temps)
-    rdveg = RandomDonutVolcanoGenerator{Temp_type}(opts.max_num_dve, opts.dve_mode_range..., opts.dve_width_range...)
+    rdveg = RandomDonutVolcanoGenerator{Temp_type}(opts.max_num_dve, opts.dve_mode_range[end], opts.dve_width_range[end])
     predictors = EnsemblePredictor{Temp_type}[]
     predictions = Vector{Temp_type}[]
     for _ ∈ UnitRange(1, opts.analysis_iterations)
         push!( predictors,
-               EnsemblePredictor{Temp_type}(
+               EnsemblePredictor(
                 opts.analysis_rng,
                 rdveg,
                 opts.num_interp,
@@ -344,6 +343,6 @@ function SchottkyAnalysis(temps, input_cV, opts::SchottkyOptions)
         )
         push!( predictions, zeros(Temp_type, opts.cheby_order) )
     end
-    return SchottkyAnalysis{Temp_type}( temps, input_cV, opts )
+    return SchottkyAnalysis{Temp_type}( temps, input_cV, opts, rdveg, predictors, predictions )
 end
 

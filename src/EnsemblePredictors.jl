@@ -51,7 +51,7 @@ function EnsemblePredictor(rng::AbstractRNG,
     # Turn to the train stuff
     train_chebys = chebycoefficients(train_ens, cheby_order, interpdomain...) |> transpose
     # Create the GaussianKRRML learning module
-    gkrr = GaussianKRRML{Temp_type}(temps, interp_cVs, interp_chebys, interp_msqdiff_mat, train_cVs, train_chebys; σ0 = initial_hyp[1], λ0 = initial_hyp[2], max_loss_order = max_loss_order)
+    gkrr = GaussianKRRML(temps, interp_cVs, interp_chebys, interp_msqdiff_mat, train_cVs, train_chebys; σ0 = initial_hyp[1], λ0 = initial_hyp[2], max_loss_order = max_loss_order)
     ∂gkrr = ∇GaussianKRRML(gkrr)
     # Return the proper EnsemblePredictor
     return EnsemblePredictor{Temp_type}( interp_ens, train_ens, gkrr, ∂gkrr )
