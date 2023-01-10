@@ -15,10 +15,11 @@ configurable options for the SchottkyAnalysis.
 
 # Usage
 
-The simplest usage of `SchottkyOptions` is just to use the defaults with `T = Float64`
+The simplest usage of `SchottkyOptions` is just to use the defaults with `T = Float64`. Note that the `distribution_domain`
+always must be supplied since it is set by the temperature scale in the problem.
 
 ```jldoctest
-julia> opts = SchottkyOptions{Float64}(); # Use the default values with parametric type Float64
+julia> opts = SchottkyOptions(distribution_domain = (0., 20.)); # Use the default values and type Float64
 
 julia> eltype(opts)
 Float64
@@ -27,22 +28,22 @@ Float64
 However, if a different float is required, say `Float32`, just pass the desired type into the constructor as:
 
 ```jldoctest
-julia> opts32 = SchottkyOptions{Float32}(); # Use the default values but set the parameteric type to Float32
+julia> opts32 = SchottkyOptions(distribution_domain = (0., 20.), analyis_type = Float32); # Use the default values but set the analysis_type to Float32
 
 julia> eltype(opts32)
 Float32
 ```
 
 Finally, if one wants to adjust any of the options to a different value, use the keyword in the 
-constructor. (Note that keywords must follow positional arguments.)
+constructor.
 
 ```jldoctest
-julia> opts = SchottkyOptions{Float64}(analysis_seed = 25); # Keep all default values (T = Float64) except the analysis_seed which we set to 25
+julia> opts = SchottkyOptions(distribution_domain = (0., 20.), analysis_seed = 25); # Keep all default values (T = Float64) except the analysis_seed which we set to 25
 
 julia> opts.analysis_seed
 25
 
-julia> opts32 = SchottkyOptions{Float32}(analysis_seed = 25); # Do the same but for T = Float32. Note the (conventional) ; separating the positional and keyword arguments
+julia> opts32 = SchottkyOptions(distribution_domain = (0., 20.), analysis_type = Float32, analysis_seed = 25); # Do the same but for T = Float32
 
 julia> opts32.analysis_seed
 25
@@ -169,6 +170,7 @@ struct SchottkyOptions{T <: AbstractFloat}
 end
 
 function SchottkyOptions(;
+                          analyis_type::Union{Type, Nothing} = nothing, # used to specify a different type
                           analysis_seed = 42,
                           analysis_rng = Xoshiro(analysis_seed),
                           analysis_nls = TwoLevelSystem(),
@@ -201,7 +203,7 @@ function SchottkyOptions(;
     _cheby_order = cheby_order
     @assert _cheby_order ≥ 0 "The order of the Chebyshev interpolation must be a nonnegative number. Got $_cheby_order."
     _distribution_domain = distribution_domain
-    Ttype = eltype(_distribution_domain)
+    Ttype = analyis_type isa Nothing ? eltype(_distribution_domain) : analyis_type
     @assert Ttype <: AbstractFloat "The elements of the supplied distribution_domain must be of AbstractFloat type. Got $Ttype."
 
     # Set and check the analysis-wide parameters
