@@ -3,7 +3,7 @@ using Random
 using Optim
 import Base: eltype
 
-export SchottkyOptions, eltype, SchottkyAnalysis
+export SchottkyOptions, eltype, SchottkyAnalysis, train!, predict!, create_chebinterp
 
 const _SA_input_pair = Tuple{T, T} where T # This is purely in anticipation of maybe adding Vector pair too for convenience
 
@@ -215,7 +215,7 @@ function SchottkyOptions(;
     _num_interp = num_interp
     @assert _num_interp > 1 "The size of the InterpolationSet must be greater than one. Got $_num_interp."
     _num_train = num_train
-    @assert _num_train > 1 "The size of the TrainingSet must be greater than one. Got $_num_train."
+    @assert _num_train > 0 "The size of the TrainingSet must be greater than zero. Got $_num_train."
     _max_cheby_component = max_cheby_component
     @assert  0 ≤ _max_cheby_component ≤ _cheby_order "The maximum Chebyshev component to include in the loss must be greater than or equal to zero and less than the maximum index. Got $_max_cheby_component while the maximum is $_cheby_order."
     _initial_hyperparameters = Ttype.(initial_hyperparameters)
@@ -344,5 +344,35 @@ function SchottkyAnalysis(temps, input_cV, opts::SchottkyOptions)
         push!( predictions, zeros(Temp_type, opts.cheby_order) )
     end
     return SchottkyAnalysis{Temp_type}( temps, input_cV, opts, rdveg, predictors, predictions )
+end
+
+train!(sa::SchottkyAnalysis, predictor_idx) = train!(sa.predictors[predictor_idx], sa.opts)
+function train!(sa::SchottkyAnalysis)
+    for idx ∈ eachindex(sa.predictors)
+        train!(sa, idx)
+    end
+    return sa
+end
+
+function predict!(trained_sa::SchottkyAnalysis, predictor_idx)
+    trainσ = hyperparameters(trained_sa.predictors[predictor_idx].gkrr)[begin]
+    pred_coeffs = view(trained_sa.predictions[predictor_idx], :)
+    return predict!(pred_coeffs, trained_sa.temperatures, trained_sa.input_cV, 
+                    trained_sa.predictors[predictor_idx], trainσ, trained_sa.opts.numint_method)
+end
+function predict!(sa::SchottkyAnalysis)
+    for idx ∈ eachindex(sa.predictors)
+        predict!(sa, idx)
+    end
+    return sa
+end
+
+create_chebinterp(predicted_sa::SchottkyAnalysis, pred_idx) = create_chebinterp(predicted_sa.predictions[pred_idx], predicted_sa.opts.distribution_domain...)
+function create_chebinterp(predicted_sa::SchottkyAnalysis)
+    output = []
+    for pred_idx ∈ eachindex(predicted_sa.predictions)
+        push!(output, create_chebinterp(predicted_sa, pred_idx))
+    end
+    return output
 end
 

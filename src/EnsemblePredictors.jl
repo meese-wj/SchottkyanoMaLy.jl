@@ -1,8 +1,9 @@
 
 using Random 
 using LinearAlgebra
+using Optim
 
-export EnsemblePredictor
+export EnsemblePredictor, train!, predict!
 
 """
     EnsemblePredictor{T <: AbstractFloat}
@@ -55,5 +56,33 @@ function EnsemblePredictor(rng::AbstractRNG,
     ∂gkrr = ∇GaussianKRRML(gkrr)
     # Return the proper EnsemblePredictor
     return EnsemblePredictor{Temp_type}( interp_ens, train_ens, gkrr, ∂gkrr )
+end
+
+function optimize_functions!(predictor::EnsemblePredictor, ::Optim.ZerothOrderOptimizer)
+    return (x -> predictor.gkrr(x), )
+end
+
+function optimize_functions!(predictor::EnsemblePredictor, ::Optim.FirstOrderOptimizer)
+    return (x -> predictor.gkrr(x), (st, x) -> predictor.gradgkrr(st, x))
+end
+
+function train!(predictor::EnsemblePredictor, analysis_opts)
+    res = Optim.optimize( optimize_functions!(predictor, analysis_opts.optim_method)..., 
+                          [analysis_opts.optim_lb...], [analysis_opts.optim_ub...],
+                          [analysis_opts.initial_hyperparameters...],
+                          analysis_opts.optim_algorithm,
+                          analysis_opts.optim_options )
+    update!(predictor.gkrr, Optim.minimizer(res))
+    return predictor
+end
+
+function predict!( predict_coeffs, temps, input_cVs, predictor::EnsemblePredictor, trainσ, method )
+    interp = interpolationset(predictor.gkrr)
+    input_interp_msdiffs = input_reference_msqdiffs(input_cVs, specific_heats(interp), temps; method = method)
+    input_νvector = gausskernel( input_interp_msdiffs, trainσ )
+    for comp_idx ∈ eachindex(predict_coeffs)
+        predict_coeffs[comp_idx] = predict_component(input_νvector, inv_Gram(interp), cheby_components(interp, comp_idx)) 
+    end
+    return predict_coeffs
 end
 
