@@ -59,11 +59,14 @@ function EnsemblePredictor(rng::AbstractRNG,
 end
 
 function optimize_functions!(predictor::EnsemblePredictor, ::Optim.ZerothOrderOptimizer)
-    return (x -> predictor.gkrr(x), )
+    learner::GaussianKRRML{T} = predictor.gkrr
+    return (x -> learner(x), )
 end
 
-function optimize_functions!(predictor::EnsemblePredictor, ::Optim.FirstOrderOptimizer)
-    return (x -> predictor.gkrr(x), (st, x) -> predictor.gradgkrr(st, x))
+function optimize_functions!(predictor::EnsemblePredictor{T}, ::Optim.FirstOrderOptimizer) where T
+    learner::GaussianKRRML{T} = predictor.gkrr
+    gradient::∇GaussianKRRML{T} = predictor.gradgkrr
+    return (x -> learner(x), (st, x) -> gradient(st, x))
 end
 
 function train!(predictor::EnsemblePredictor, analysis_opts)
