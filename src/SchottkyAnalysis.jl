@@ -317,7 +317,7 @@ struct SchottkyAnalysis{T <: AbstractFloat}
     predictions::Vector{Vector{T}}
 end
 
-function SchottkyAnalysis(temps, input_cV, opts::SchottkyOptions)
+function SchottkyAnalysis(temps, input_cV, opts::SchottkyOptions; initial_prediction::Bool = false)
     @assert length(temps) == length(input_cV) "Size mismatch. There must be as many temperatures as specific heats. Got $(length(temps)) and $(length(input_cV))."
 
     Temp_type = eltype(temps)
@@ -345,7 +345,11 @@ function SchottkyAnalysis(temps, input_cV, opts::SchottkyOptions)
         )
         push!( predictions, zeros(Temp_type, opts.cheby_order) )
     end
-    return SchottkyAnalysis{Temp_type}( temps, input_cV, opts, rdveg, predictors, predictions )
+
+    sa = SchottkyAnalysis{Temp_type}( temps, input_cV, opts, rdveg, predictors, predictions )
+    initial_prediction ? predict!(sa) : nothing
+
+    return sa
 end
 
 train!(sa::SchottkyAnalysis, predictor_idx) = train!(sa.predictors[predictor_idx], sa.opts)
