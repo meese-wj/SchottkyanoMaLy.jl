@@ -58,7 +58,7 @@ function EnsemblePredictor(rng::AbstractRNG,
     return EnsemblePredictor{Temp_type}( interp_ens, train_ens, gkrr, ∂gkrr )
 end
 
-function optimize_functions!(predictor::EnsemblePredictor, ::Optim.ZerothOrderOptimizer)
+function optimize_functions!(predictor::EnsemblePredictor{T}, ::Optim.ZerothOrderOptimizer) where T
     learner::GaussianKRRML{T} = predictor.gkrr
     return (x -> learner(x), )
 end
