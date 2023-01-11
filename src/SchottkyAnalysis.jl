@@ -90,7 +90,7 @@ repeating this process for a few different [`InterpolationSet`](@ref)s and [`Tra
 
 * `optim_lb = (1e-12, 1e-8)`: the lower `(σ, λ)` bounds for the constrained optimization
 * `optim_ub = (Inf, Inf):` the upper `(σ, λ)` bounds for the constrained optimization
-* `optim_method = Optim.ConjugateGradient()`: the multivariate *unconstrained* optimization method
+* `optim_method = Optim.LBFGS()`: the multivariate *unconstrained* optimization method
 * `optim_algorithm = Optim.Fminbox(optim_method)`: the multivariate *constrained* optimization algorithm used on top of `optim_method`
 * `optim_options = Optim.Options(show_trace = true)`: any other `Optim.Options` one wishes to pass to the optimizer
 
@@ -181,7 +181,7 @@ function SchottkyOptions(;
                           initial_hyperparameters = (0.5, 0.5),
                           optim_lb = (1e-12, 1e-8),
                           optim_ub = (Inf, Inf),
-                          optim_method = Optim.ConjugateGradient(),
+                          optim_method = Optim.LBFGS(),
                           optim_algorithm = Optim.Fminbox(optim_method),
                           optim_options = Optim.Options(show_trace = true),
                           max_num_dve = 30,
