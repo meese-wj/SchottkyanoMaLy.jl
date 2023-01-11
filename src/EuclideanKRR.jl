@@ -429,7 +429,6 @@ function (∇gkrr::∇GaussianKRRML{T})(hyp_σλ::Union{AbstractArray, Tuple}, u
     gkrr = get_GaussianKRRML(∇gkrr)
     tl = zero(eltype(hyp_σλ))
     update_first ? (tl = gkrr(hyp_σλ)) : nothing
-    @show hyp_σλ
     tlg = total_loss_gradient(trainingset(gkrr), interpolationset(gkrr), num_loss_components(gkrr))
     return tlg
 end
