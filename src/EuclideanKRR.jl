@@ -216,7 +216,6 @@ function TrainingSet( _train_cVs, _cheby_coefficients, _interpset )
     @assert size(_train_cVs)[2] == size(_cheby_coefficients)[2] "Size mismatch. The number of columns of the specific heats should match those of the Chebyshev components. Got $( size(_train_cVs)[2] ) and $( size(_cheby_coefficients)[2] )."
     @assert size(_cheby_coefficients)[1] == num_cheby_components(_interpset) "Size mismatch. The number of rows of the Chebyshev components should match the *columns*  of those in the InterpolationSet. Got $( size(_cheby_coefficients)[1] ) and $( size(cheby_components(_interpset))[2] )."
     new_type = promote_type( map( x -> eltype(x), (_train_cVs, _cheby_coefficients, _interpset) )... )
-    @show "here"
     return TrainingSet{new_type}( new_type.(_train_cVs),
                                   new_type.(_cheby_coefficients),
                                   zeros(new_type, num_ensembles(_interpset), size(_train_cVs)[2]),
@@ -232,9 +231,7 @@ function TrainingSet(_temperatures, _train_cVs, _cheby_coefficients, _interpset;
     # Now populate the msqdiff_TvI matrix
     @inbounds Threads.@threads for train_cidx ∈ eachindex(eachcol(msqdiff_TvI(trainset)))
         train_column = view( msqdiff_TvI(trainset), :, train_cidx )
-        @show train_column
         input_reference_msqdiffs!( train_column, specific_heats(trainset, train_cidx), specific_heats(_interpset), _temperatures; kwargs... )
-        @show train_column
     end
     return trainset
 end
@@ -432,6 +429,7 @@ function (∇gkrr::∇GaussianKRRML{T})(hyp_σλ::Union{AbstractArray, Tuple}, u
     gkrr = get_GaussianKRRML(∇gkrr)
     tl = zero(eltype(hyp_σλ))
     update_first ? (tl = gkrr(hyp_σλ)) : nothing
+    @show hyp_σλ
     tlg = total_loss_gradient(trainingset(gkrr), interpolationset(gkrr), num_loss_components(gkrr))
     return tlg
 end
