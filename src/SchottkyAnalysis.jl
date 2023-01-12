@@ -28,7 +28,7 @@ Float64
 However, if a different float is required, say `Float32`, just pass the desired type into the constructor as:
 
 ```jldoctest
-julia> opts32 = SchottkyOptions(distribution_domain = (0., 20.), analyis_type = Float32); # Use the default values but set the analysis_type to Float32
+julia> opts32 = SchottkyOptions(distribution_domain = (0., 20.), analysis_type = Float32); # Use the default values but set the analysis_type to Float32
 
 julia> eltype(opts32)
 Float32
@@ -203,7 +203,7 @@ function SchottkyOptions(;
     _cheby_order = cheby_order
     @assert _cheby_order ≥ 0 "The order of the Chebyshev interpolation must be a nonnegative number. Got $_cheby_order."
     _distribution_domain = distribution_domain
-    Ttype = analyis_type isa Nothing ? eltype(_distribution_domain) : analyis_type
+    Ttype = analysis_type isa Nothing ? eltype(_distribution_domain) : analysis_type
     @assert Ttype <: AbstractFloat "The elements of the supplied distribution_domain must be of AbstractFloat type. Got $Ttype."
 
     # Set and check the analysis-wide parameters
