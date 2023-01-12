@@ -372,7 +372,6 @@ function predict!(trained_sa::SchottkyAnalysis, predictor_idx; combine_sets = fa
                     predictor, trainσ, trained_sa.opts.numint_method)
 end
 function predict!(sa::SchottkyAnalysis; kwargs...)
-    @show kws = Dict(kwargs...)
     if haskey(kws, :combine_sets) && kws[:combine_sets]
         @info "Combining Interpolation and Training Sets for each analysis_iteration."
     end
