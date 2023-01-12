@@ -2,3 +2,4 @@
 /docs/build/
 /_*/
 /notebooks/
+*.jld2

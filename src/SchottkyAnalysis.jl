@@ -1,9 +1,10 @@
 
 using Random
 using Optim
+using JLD2
 import Base: eltype
 
-export SchottkyOptions, eltype, SchottkyAnalysis, train!, predict!, create_chebinterp
+export SchottkyOptions, eltype, SchottkyAnalysis, train!, predict!, create_chebinterp, save_analysis, load_analysis
 
 const _SA_input_pair = Tuple{T, T} where T # This is purely in anticipation of maybe adding Vector pair too for convenience
 
@@ -390,3 +391,5 @@ function create_chebinterp(predicted_sa::SchottkyAnalysis)
     return output
 end
 
+save_analysis(filename, sa::SchottkyAnalysis) = JLD2.save_object(filename, sa)
+load_analysis(filename) = JLD2.load_object(filename)::SchottkyAnalysis
