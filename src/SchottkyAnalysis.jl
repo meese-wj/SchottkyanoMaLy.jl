@@ -170,7 +170,7 @@ struct SchottkyOptions{T <: AbstractFloat}
 end
 
 function SchottkyOptions(;
-                          analyis_type::Union{Type, Nothing} = nothing, # used to specify a different type
+                          analysis_type::Union{Type, Nothing} = nothing, # used to specify a different type
                           analysis_seed = 42,
                           analysis_rng = Xoshiro(analysis_seed),
                           analysis_nls = TwoLevelSystem(),
