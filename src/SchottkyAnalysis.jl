@@ -360,15 +360,23 @@ function train!(sa::SchottkyAnalysis)
     return sa
 end
 
-function predict!(trained_sa::SchottkyAnalysis, predictor_idx)
+function predict!(trained_sa::SchottkyAnalysis, predictor_idx; combine_sets = false)
     trainσ = hyperparameters(trained_sa.predictors[predictor_idx].gkrr)[begin]
     pred_coeffs = view(trained_sa.predictions[predictor_idx], :)
+    predictor = trained_sa.predictors[predictor_idx]
+    if combine_sets
+        predictor = combine_to_predict(trained_sa, predictor_idx)
+    end
     return predict!(pred_coeffs, trained_sa.temperatures, trained_sa.input_cV, 
-                    trained_sa.predictors[predictor_idx], trainσ, trained_sa.opts.numint_method)
+                    predictor, trainσ, trained_sa.opts.numint_method)
 end
-function predict!(sa::SchottkyAnalysis)
+function predict!(sa::SchottkyAnalysis; kwargs...)
+    @show kws = Dict(kwargs...)
+    if haskey(kws, :combine_sets) && kws[:combine_sets]
+        @info "Combining Interpolation and Training Sets for each analysis_iteration."
+    end
     for idx ∈ eachindex(sa.predictors)
-        predict!(sa, idx)
+        predict!(sa, idx; kwargs...)
     end
     return sa
 end

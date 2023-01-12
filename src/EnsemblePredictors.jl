@@ -25,6 +25,16 @@ struct EnsemblePredictor{T <: AbstractFloat}
     gradgkrr::∇GaussianKRRML{T}
 end
 
+function ensemblepredictorarguments(analysis, hyp_params = nothing)
+    rdveg = analysis.rdveg
+    opts = analysis.opts
+    _hyp = hyp_params isa Nothing ? opts.initial_hyperparameters : hyp_params
+    return ( opts.analysis_rng, rdveg, opts.num_interp, opts.num_train, 
+             analysis.temperatures, opts.cheby_order, opts.distribution_domain, _hyp,
+             opts.max_cheby_component, opts.quadgk_domain..., opts.analysis_nls,
+             opts.quadgk_rtol, opts.numint_method )
+end
+
 function EnsemblePredictor(rng::AbstractRNG, 
                            rdveg::RandomDonutVolcanoGenerator, 
                            interp_size, 
@@ -38,10 +48,11 @@ function EnsemblePredictor(rng::AbstractRNG,
                            Δmax,
                            nls,
                            quadgk_rtol,
-                           num_int_method)
+                           num_int_method,
+                           _interp_ens = nothing)
     Temp_type = eltype(temps)
     # Generate ensembles
-    interp_ens = rand(rng, rdveg, interp_size)
+    interp_ens = _interp_ens isa Nothing ? rand(rng, rdveg, interp_size) : _interp_ens
     train_ens = rand(rng, rdveg, train_size)
     # Compute their specific heats 
     interp_cVs = compute_cVs(interp_ens, temps; nls = nls, Δmin = Δmin, Δmax = Δmax, rtol = quadgk_rtol )
@@ -57,6 +68,7 @@ function EnsemblePredictor(rng::AbstractRNG,
     # Return the proper EnsemblePredictor
     return EnsemblePredictor{Temp_type}( interp_ens, train_ens, gkrr, ∂gkrr )
 end
+EnsemblePredictor(analysis, hyp_params = nothing, interp_ens = nothing) = EnsemblePredictor(ensemblepredictorarguments(analysis, hyp_params)..., interp_ens)
 
 function optimize_functions!(predictor::EnsemblePredictor{T}, ::Optim.ZerothOrderOptimizer) where T
     learner::GaussianKRRML{T} = predictor.gkrr
@@ -87,5 +99,13 @@ function predict!( predict_coeffs, temps, input_cVs, predictor::EnsemblePredicto
         predict_coeffs[comp_idx] = predict_component(input_νvector, inv_Gram(interp), cheby_components(interp, comp_idx)) 
     end
     return predict_coeffs
+end
+
+function combine_to_predict(analysis, pred_idx)
+    predictor = analysis.predictors[pred_idx]
+    hypσλ = predictor.gkrr |> hyperparameters
+    comb_interp = [predictor.interp_dve; predictor.train_dve]
+    comb_train = predictor.train_dve
+    return EnsemblePredictor(analysis, hypσλ, comb_interp)
 end
 
